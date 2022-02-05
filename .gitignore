@@ -1,0 +1,13 @@
+/src/validate/files/*
+utils.log
+renv.lock
+renv/
+.RData
+.Rhistory
+.Rprofile
+*.Rproj
+.Rproj.user
+*.knit.md
+
+# unarchived html files
+src/validate/*.html

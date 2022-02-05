@@ -1,0 +1,201 @@
+---
+title: "metabolomics.json"
+output: html_notebook
+---
+
+```{r eval=FALSE, echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+prepare()
+```
+
+# Validation run metadata
+```{r echo=FALSE}
+# file-specific
+old_synId <-  "syn19315964" 
+new_synId <-  "syn26868927"
+name <- "metabolomics"
+
+# not file-specific
+old_name <- paste(name, "old", sep="_")
+new_name <- paste(name, "new", sep="_")
+rules <- paste0("rules_", name)
+
+# print validation summary
+cat( name, ".json", "\n", date(),
+    "\nold: ", old_synId, " \nnew: ", new_synId,
+    sep="")
+```
+
+# Downloaded files
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+download_files(old_synId, new_synId, name)
+```
+
+# Compared old & new files
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+compare(get(old_name), get(new_name), name, summarize=FALSE)
+```
+
+
+# Validated new file against rules
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_metabolomics.R")
+test(get(new_name), get(rules))
+```
+
+
+***
+# Validation failure investigations
+***
+
+## association_p > 0: 62 fails
+
+Analysis results:  
+- all fails are from association_p == 0  
+- the old data file didn't have these  
+- none in the source data either  
+
+```{r}
+metabolomics_new[metabolomics_new$association_p == 0, ]
+```
+
+Check for these in the old file:
+```{r}
+metabolomics_old[metabolomics_old$association_p == 0, ]
+```
+
+
+Source data (syn26064497)
+```{r}
+download_file("syn26064497", "metabolomics_source", type="f")
+metabolomics_source_file <- synGet("syn26064497", downloadLocation = "files/")
+metabolomics_source <- read_feather(metabolomics_source_file$path)
+```
+
+Check for these in the source data:
+```{r}
+metabolomics_df <- as.data.frame(metabolomics_source)
+ass_p <- (pull(metabolomics_source, "association_p"))
+length(ass_p[ass_p == 0])
+```
+
+
+Check specific cases in source data:
+```{r}
+metabolomics_source[metabolomics_source$associated_gene_name %in% c("MYH16", "AOC1", "TMEM176A", "CYP3A43", "ANAPC5", "PXN", "BUD31", "PTCD1", "CYP3A5", "ZKSCAN1"),]
+```
+
+
+## is_unique(associated_gene_name): 438 fails
+
+Analysis results:  
+- duplicate hgnc look similar to those identified in AG-333, fwiw...  
+- source data contains dups with disjointed pvalues too  
+
+```{r}
+counts <- as.data.frame(table(metabolomics_new$associated_gene_name))
+counts[order(counts$Freq, decreasing = TRUE),]
+
+```
+
+CRIP1 dups  
+
+ENSG00000213145 - this is CRIP1 (https://uswest.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g=ENSG00000213145;r=14:105486317-105488947)  
+ENSG00000257341 - this is not CRIP1 (https://uswest.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g=ENSG00000257341;r=14:105487199-105492267)  
+
+
+```{r}
+metabolomics_new[metabolomics_new$associated_gene_name == 'CRIP1',]
+```
+
+C17orf100 dups  
+
+ENSG00000256806 - this ENSG is current (http://uswest.ensembl.org/Homo_sapiens/Gene/Sequence?g=ENSG00000256806;r=17:6651762-6693202)  
+ENSG00000279257 - this ENSG is archived (http://dec2016.archive.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g=ENSG00000279257;r=17:6651914-6652270;t=ENST00000624159)  
+
+Why are the p-values so wildly different here?
+
+```{r}
+metabolomics_new[metabolomics_new$associated_gene_name == 'C17orf100',]
+```
+U3 dups  
+
+so many ENSG for human U3...(https://uswest.ensembl.org/Human/Search/Results?q=U3;site=ensembl;facet_species=Human)  
+
+but why are the p-vals for the same metabolite wildly different?  
+
+```{r}
+metabolomics_new[metabolomics_new$associated_gene_name == 'U3',]
+```
+
+
+## is_unique(associated_gene_name, metabolite_id): 231 fails
+
+Analysis results:  
+- Unsurprisingly, these overlap with the genes that aren't unique on hgnc alone (case above)  
+- Some dups have different association_p values  
+- Some dups have different gene_wide_threshold_1kgp values  
+- Some dups have different values for both p-vals  
+- Metazoa_SRP c18.2 has 3 duplicates  
+- Y_RNA has 3+ dups for multiple metabolites  
+- Source data spot checks find the same dups  
+
+```{r}
+new_hgnc <- metabolomics_new %>% 
+  group_by(associated_gene_name, metabolite_id) %>% 
+  mutate(dupe = n()>1)
+dups_new_hgnc <- new_hgnc[new_hgnc$dupe == TRUE,]
+dups_new_hgnc[order(dups_new_hgnc$associated_gene_name, dups_new_hgnc$metabolite_id),]
+```
+How many non-identical dups do we have?  
+231 total dups  
+- 138 dups have different association_p values  
+- 207 dups have different gene_wide_p_threshold_1kgp values  
+- 20 dups are identical across all four of these fields: associated_gene_name, metabolite_id, association_p, gene_wide_p_threshold_1kgp   
+
+```{r}
+new_hgnc <- metabolomics_new %>% 
+  group_by(associated_gene_name, metabolite_id) %>% 
+  mutate(dupe = n()>1)
+dups_new_hgnc <- new_hgnc[new_hgnc$dupe == TRUE,]
+dups_new_hgnc_sorted <- dups_new_hgnc[order(dups_new_hgnc$associated_gene_name, dups_new_hgnc$metabolite_id),]
+
+new_assp <- metabolomics_new %>% 
+  group_by(associated_gene_name, metabolite_id, association_p) %>% 
+  mutate(dupe = n()>1)
+dups_new_assp <- new_assp[new_assp$dupe == TRUE,]
+dups_new_assp_sorted <- dups_new_assp[order(dups_new_assp$associated_gene_name, dups_new_assp$metabolite_id),]
+
+new_gwpt <- metabolomics_new %>% 
+  group_by(associated_gene_name, metabolite_id, gene_wide_p_threshold_1kgp) %>% 
+  mutate(dupe = n()>1)
+dups_new_gwpt <- new_gwpt[new_gwpt$dupe == TRUE,]
+dups_new_gwpt_sorted <- dups_new_gwpt[order(dups_new_gwpt$associated_gene_name, dups_new_gwpt$metabolite_id),]
+
+new_all <- metabolomics_new %>% 
+  group_by(associated_gene_name, metabolite_id, association_p, gene_wide_p_threshold_1kgp) %>% 
+  mutate(dupe = n()>1)
+dups_new_all <- new_all[new_all$dupe == TRUE,]
+dups_new_all_sorted <- dups_new_all[order(dups_new_all$associated_gene_name, dups_new_all$metabolite_id),]
+
+dups_new_hgnc_sorted
+setdiff(dups_new_hgnc_sorted, dups_new_assp_sorted)
+setdiff(dups_new_hgnc_sorted, dups_new_gwpt_sorted)
+setdiff(dups_new_hgnc_sorted, dups_new_all_sorted)
+```
+
+
+
+
+duplicates with differing p-values exist in the source data
+```{r}
+metabolomics_source[metabolomics_source$associated_gene_name == "C17orf100",]
+```
+
+
+```{r}
+metabolomics_source[metabolomics_source$associated_gene_name == "CRIP1",]
+```

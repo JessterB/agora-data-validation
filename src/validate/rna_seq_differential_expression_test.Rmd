@@ -1,0 +1,208 @@
+---
+title: "rna_seq_differential_expression.json"
+output: html_notebook
+---
+
+```{r eval=FALSE, echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+prepare()
+```
+
+# Validation run metadata
+```{r echo=FALSE}
+# file-specific
+old_synId <-  "syn12177499" 
+new_synId <-  "syn26868926"
+name <- "rna_seq_differential_expression"
+
+# not file-specific
+old_name <- paste(name, "old", sep="_")
+new_name <- paste(name, "new", sep="_")
+rules <- paste0("rules_", name)
+
+# print validation summary
+cat( name, ".json", "\n", date(),
+    "\nold: ", old_synId, " \nnew: ", new_synId,
+    sep="")
+```
+
+# Downloaded files
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+download_files(old_synId, new_synId, name)
+```
+
+# Compared old & new files
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+compare(get(old_name), get(new_name), name, summarize=FALSE)
+```
+
+
+# Validated new file against rules
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_rna_seq_differential_expression.R")
+test(get(new_name), get(rules))
+```
+
+
+***
+# Validation failure investigations
+***
+
+## 	field_length(ensembl_gene_id, n = 15): 1 fail
+
+
+```{r}
+v <- validator(field_length(ensembl_gene_id, n = 15))
+cf <- confront(get(new_name), v)
+out <- values(cf)
+is_unique_fails <- get(new_name)[!out,]
+is_unique_fails
+```
+
+
+## field_length(hgnc_symbol, min = 2, max = 100): 40400 fails
+
+- All of these are due to missing hgnc
+- 2342 ENSGs / expect 4 per region for the 7 models so up to 28 dups per ENSG is expected
+- but some ENSG  have 56 dups
+=> dups appear identical, so generally harmless?
+
+```{r}
+v <- validator(field_length(hgnc_symbol, min = 2, max = 100))
+cf <- confront(rna_seq_differential_expression_new, v)
+out <- values(cf)
+is_unique_fails <- rna_seq_differential_expression_new[!out,]
+print(is_unique_fails[order(is_unique_fails$ensembl_gene_id, is_unique_fails$tissue, is_unique_fails$model),])
+dup_ensg <- as.data.frame(table(is_unique_fails$ensembl_gene_id))
+dup_ensg[order(-dup_ensg$Freq),]
+
+```
+
+Rows for the 56 dups case seem identical pairwise, so 28 uniques as expected
+
+```{r}
+dups_56 <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$ensembl_gene_id == "ENSG00000229425",]
+dups_56[order(dups_56$tissue, dups_56$model),]
+```
+
+
+
+## is_unique(model, tissue, ensembl_gene_id): 168 fails
+
+- We have identical dups => harmless
+
+
+```{r}
+v <- validator(is_unique(model, tissue, ensembl_gene_id))
+cf <- confront(rna_seq_differential_expression_new, v)
+out <- values(cf)
+is_unique_fails <- rna_seq_differential_expression_new[!out,]
+is_unique_fails[order(is_unique_fails$ensembl_gene_id, is_unique_fails$tissue, is_unique_fails$model),]
+```
+
+
+## 	adj_p_val > 0: 100 fails
+
+Analysis results  
+- The old data file had <2k of these  
+- The source data has only 18 NAs  
+- AG-350  
+
+```{r}
+v <- validator(adj_p_val > 0)
+cf <- confront(rna_seq_differential_expression_new, v)
+out <- values(cf)
+is_unique_fails <- rna_seq_differential_expression_new[!out,]
+is_unique_fails[order(is_unique_fails$ensembl_gene_id, is_unique_fails$tissue),]
+```
+old file has more of these (>2k)
+
+```{r}
+rna_seq_differential_expression_old[rna_seq_differential_expression_old$adj_p_val == 0,]
+```
+
+Get the source file
+```{r}
+rna_seq_differential_expression_source <- download_file('syn14237651', rna_seq_differential_expression_source, type = 'tsv')
+```
+
+look at a specific ENSG from the 100 fails:  
+ENSG00000003989 - we have a pvals in the source data   
+=> where did they go during processing?  
+
+```{r}
+ensg1 <- rna_seq_differential_expression_source[rna_seq_differential_expression_source$ensembl_gene_id == 'ENSG00000003989',]
+ensg1_filtered <- ensg1[ensg1$Tissue == 'TCX',]
+print(ensg1_filtered)
+
+ensg1_more_filtered <- ensg1_filtered[ensg1_filtered$Comparison == "AD-CONTROL",]
+print(ensg1_more_filtered)
+
+diagnoses <- c("Diagnosis", "Diagnosis.AOD", "Diagnosis.Sex")
+ensg1_extra_filtered <- ensg1_more_filtered[ensg1_more_filtered$Model %in% diagnoses, ]
+ensg1_extra_filtered
+```
+
+
+
+source file has 1 actual 0 and 92 empty rows(I think?)  
+source file has 92 NAs  
+```{r}
+source_zero <- rna_seq_differential_expression_source[rna_seq_differential_expression_source[[11]] == 0,]
+source_na <- rna_seq_differential_expression_source[is.na(rna_seq_differential_expression_source[[11]]),]
+print(source_zero)
+print(source_na)
+```
+
+
+
+ENSG00000229807 - has the only row with 0 for pvals in the source data    
+- The source data contains one duplicate row for DLPFC AD-CONTROL ALL (Tissue Comparison Sex)    
+- The dup rows have different values for the numerics except AveExpr  
+- The dup is not the row that has 0 pvals, the zero pvals row is not processed due to Comparison filtering  
+
+```{r}
+new_xist <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$ensembl_gene_id == 'ENSG00000229807',]
+print(new_xist[order(new_xist$tissue, new_xist$model),])
+
+source_xist <- rna_seq_differential_expression_source[rna_seq_differential_expression_source$ensembl_gene_id == 'ENSG00000229807',]
+print(source_xist)
+
+diagnoses <- c("Diagnosis", "Diagnosis.AOD", "Diagnosis.Sex")
+diagnoses_filtered_xist <- source_xist[source_xist$Model %in% diagnoses,]
+print(diagnoses_filtered_xist)
+
+double_filtered_xist <- diagnoses_filtered_xist[diagnoses_filtered_xist$Comparison == "AD-CONTROL",]
+
+double_filtered_xist[order(double_filtered_xist$Tissue, double_filtered_xist$Model),]
+```
+
+Do the 100 new 0s include the 92 NAs? - not entirely overlapping  
+
+-> not sure yet...  
+
+
+```{r}
+source_na_ensg <- source_na$ensembl_gene_id
+new_zero <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$adj_p_val == 0,]
+new_zero_ensg <- new_zero$ensembl_gene_id
+
+
+ensgs <- setdiff(new_zero_ensg, source_na_ensg)
+cat(sort(ensgs), sep = "\n")
+
+diff <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$ensembl_gene_id %in% ensgs,]
+filtered_diff <- diff[diff$adj_p_val == 0,]
+print(filtered_diff[order(filtered_diff$ensembl_gene_id, filtered_diff$tissue, filtered_diff$hgnc_symbol),]) # in new not source
+
+reverse_ensgs <- setdiff(source_na_ensg, new_zero_ensg)
+cat(sort(reverse_ensgs), sep = "\n")
+
+reverse_diff <-rna_seq_differential_expression_new[rna_seq_differential_expression_new$ensembl_gene_id %in% reverse_ensgs,]
+print(reverse_diff[order(reverse_diff$ensembl_gene_id, reverse_diff$tissue, reverse_diff$hgnc_symbol),]) # in source not new
+```
+
+

@@ -1,0 +1,113 @@
+---
+title: "neuropath_corr.json"
+output: html_notebook
+---
+
+```{r eval=FALSE, echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+prepare()
+```
+
+# Validation run metadata
+```{r echo=FALSE}
+# file-specific
+old_synId <-  "syn22167182" 
+new_synId <-  "syn26868912"
+name <- "neuropath_corr"
+
+# not file-specific
+old_name <- paste(name, "old", sep="_")
+new_name <- paste(name, "new", sep="_")
+rules <- paste0("rules_", name)
+
+# print validation summary
+cat( name, ".json", "\n", date(),
+    "\nold: ", old_synId, " \nnew: ", new_synId,
+    sep="")
+```
+
+# Downloaded files
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+download_files(old_synId, new_synId, name)
+```
+
+# Compared old & new files
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+compare(get(old_name), get(new_name), name, summarize=FALSE)
+```
+
+
+# Validated new file against rules
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_neuropath_corr.R")
+test(get(new_name), get(rules))
+```
+
+
+***
+# Validation failure investigations
+***
+## field_length(hgnc_gene_id, min = 2, max = 100): 8516 fails
+
+Analysis results  
+* The 8516 hgnc/gnames are missing in the source data  
+* We seem to have no issues displaying this data in the app - we must join on ENSG and populate the hgnc from gene_info or elsewhere  
+--- see for example https://agora-develop.adknowledgeportal.org/genes/(genes-router:gene-details/ENSG00000268903)   
+
+All of these are blank strings
+
+```{r}
+neuropath_corr_new[neuropath_corr_new$hgnc_gene_id == "",]
+```
+These were NAs in the old data
+
+```{r}
+nas <- is.na(neuropath_corr_old$gname)
+neuropath_corr_old[nas,]
+```
+
+
+```{r}
+neuropath_corr_source <- download_file("syn22017882", type = "csv")
+nas_source <- is.na(neuropath_corr_source$GName)
+neuropath_corr_source[nas_source,]
+```
+
+
+
+## pval > 0: 19 fails
+
+Analysis results:  
+* All 19 have pval == 0  
+* The old file and the source data do not have any pval == 0  
+* Filed AG-348 for tracking
+
+```{r}
+neuropath_corr_new[neuropath_corr_new$pval == 0 ,]
+```
+
+We didn't have these in the old data
+
+```{r}
+neuropath_corr_old[neuropath_corr_old$pval == 0 ,]
+```
+
+No n/as either
+```{r}
+nas_old <- is.na(neuropath_corr_old$pval)
+neuropath_corr_old[nas_old, ]
+```
+
+
+or in the source data
+```{r}
+neuropath_corr_source[neuropath_corr_source$PVal == 0 ,]
+```
+
+```{r}
+nas_source <- is.na(neuropath_corr_source$pval)
+neuropath_corr_source[nas_source, ]
+```

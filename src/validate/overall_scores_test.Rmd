@@ -1,0 +1,86 @@
+---
+title: "overall_scores.json"
+output: html_notebook
+---
+
+```{r eval=FALSE, echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+prepare()
+```
+
+# Validation run metadata
+```{r echo=FALSE}
+# file-specific
+old_synId <-  "syn25741025" 
+new_synId <-  "syn26868918"
+name <- "overall_scores"
+
+# not file-specific
+old_name <- paste(name, "old", sep="_")
+new_name <- paste(name, "new", sep="_")
+rules <- paste0("rules_", name)
+
+# print validation summary
+cat( name, ".json", "\n", date(),
+    "\nold: ", old_synId, " \nnew: ", new_synId,
+    sep="")
+```
+
+# Downloaded files
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+download_files(old_synId, new_synId, name)
+```
+
+# Compared old & new files
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+compare(get(old_name), get(new_name), name, summarize=FALSE)
+```
+
+
+# Validated new file against rules
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_overall_scores.R")
+test(get(new_name), get(rules))
+```
+
+
+***
+# Validation failure investigations
+***
+
+## field_length(hgnc_gene_id, min = 2, max = 100): 5745 fails
+
+- All fails are due to blank string hgnc values  
+- The old file had even more NAs  
+- These are all missing lit scores, but that makes sense because gene names are used for the pubmed searches  
+- Agora can display the scores with NA GeneName values just file  
+- if the app doesn't already handle missing vs blank strings here, it shouldn't be too hard to fix that  
+
+
+```{r}
+overall_scores_new[overall_scores_new$hgnc_gene_id == "",]
+```
+
+
+We had even more NAs in the old file  
+Note that a spot check shows that the app is able to display the NA GeneName scores:   (https://agora-develop.adknowledgeportal.org/genes/(genes-router:gene-details/ENSG00000267249))  
+
+```{r}
+overall_scores_old[is.na(overall_scores_old$GeneName),]
+```
+
+
+
+## is.numeric(literaturescore)
+Analysis results:  
+- lit score is a string, the other scores are still numeric  
+- AG-337  
+
+
+```{r}
+class(overall_scores_new$literaturescore)
+
+```
