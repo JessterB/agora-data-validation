@@ -14,6 +14,13 @@ The framework allows you to:
 * Generate file-specific validation reports
 
 
+## Caveats
+
+The framework attempts to handle comparing and validating in as generic a way as possible to minimize the amount of code required for each test class. However, this means that there are some variables with non-unique names across test classes. 
+
+When switching between test classes, ensure that you execute the "Validation run metadata" chunk to properly set the variables for your current file before attempting to compare/validate. If you forget this, you will see unexpected results.
+
+
 ## First time setup
 
 Ensure that your synapse PAT or login credentials are available to the synapser client; see https://r-docs.synapse.org/articles/manageSynapseCredentials.html
@@ -61,9 +68,11 @@ Compare
 1. Add a new R Notebook to src/validation
 2. Copy the contents of src/validate/test_template.Rmd into your new validation file
 3. Give your test file a meaningful title
-4. Fill in the file-specific metadata values in the "Valdiation run metadata" section
+4. Fill in the file-specific metadata values in the "Validation run metadata" section
 5. Run the first four chunks of R code to see your comparison!
 6. Save your validation file as '<name>_test.Rmd'
+
+If the file you are trying to validate includes nested objects, check out `gene_info_test.Rmd` for an example of how to compare and validate subobject fields.
 
 Validate
 1. Add a new R Script to src/rules
@@ -83,7 +92,7 @@ See the Rule debugging section for tips on debugging rule errors.
 - Write your own exploratory code to better understand what is happening as required
 - See the existing Investigations in src/validate and/or src/archive for inspiration and suggested formatting
 
-## Rule debugging
+## Rule authoring & debugging
 https://cran.r-project.org/web/packages/validate/vignettes/cookbook.html
 https://www.markvanderloo.eu/yaRb/2016/03/25/easy-data-validation-with-the-validate-package/ (see comments)
 

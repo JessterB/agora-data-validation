@@ -38,6 +38,26 @@ source("~/repos/rstudio/agora-data-validation/src/utils.R")
 compare(get(old_name), get(new_name), name, summarize=FALSE)
 ```
 
+## Compare old & new subobjects
+
+### median_expression
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+compare_subobjects(get(old_name), get(new_name), "medianexpression", "median_expression")
+```
+
+### druggability
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+compare_subobjects(get(old_name), get(new_name), "druggability")
+```
+
+### nominated_target
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+compare_subobjects(get(old_name), get(new_name), "nominatedtarget", "nominated_target")
+```
+
 
 # Validated new file against rules
 ```{r echo=FALSE}
@@ -46,12 +66,143 @@ source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info.R")
 test(get(new_name), get(rules))
 ```
 
+## Validated subobjects against rules
+
+### nominated_target
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info_nominated_target.R")
+
+subrules <- paste0(rules, "_nominated_target")
+test_subobject(get(new_name), "nominated_target", get(subrules))
+```
+
+### druggability
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info_druggability.R")
+
+subrules <- paste0(rules, "_druggability")
+test_subobject(get(new_name), "druggability", get(subrules))
+```
+
+### median_expression
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info_median_expression.R")
+
+subrules <- paste0(rules, "_median_expression")
+test_subobject(get(new_name), "median_expression", get(subrules))
+```
+
 
 ***
 # Validation failure investigations
 ***
+```{r}
+v <- validator(field_length(validation_study_details, min = 20, max = 1000))
+cf <- confront(subobj, v)
+out <- values(cf)
+is_unique_fails <- subobj[!out,]
+is_unique_fails
+```
+
+
+
+## AG-365 field_length(data_used_to_support_target_selection, min = 1, max = 2000): 2 fails
+
+Analysis:
+- These values are missing in both the old data (verified in app & mongo) and in the source data
+- Only impacts two genes (REST, HDAC1)
+- The app doesn't conditionally handle this, so we have a header with no content for these
+
+```{r}
+subobj <- get_subobject(gene_info_new, "nominated_target")
+v <- validator(	field_length(data_used_to_support_target_selection, min = 15, max = 2000))
+cf <- confront(subobj, v)
+out <- values(cf)
+is_unique_fails <- subobj[!out,]
+is_unique_fails
+```
+
+Are there values in the source data?
+
+```{r}
+nominated_target_source <- download_file("syn12540368", type = "csv")
+```
+
+```{r}
+nominated_target_source[nominated_target_source$hgnc_symbol %in% c("REST", "HDAC1"),]
+```
+
+
+## uniques
+```{r}
+v <- validator(is_unique(hgnc_symbol))
+cf <- confront(gene_info_new, v)
+out <- values(cf)
+is_unique_fails <- gene_info_new[!out,]
+print(is_unique_fails)
+print(is_unique_fails[is_unique_fails$hgnc_symbol != "",])
+```
+
+
+## field_length(hgnc_symbol, min = 2, max = 100): 20011 fails
+```{r}
+v <- validator(field_length(hgnc_symbol, min = 2, max = 100))
+cf <- confront(gene_info_new, v)
+out <- values(cf)
+is_unique_fails <- gene_info_new[!out,]
+is_unique_fails
+```
 
 
 ```{r}
-gene_info_new[!is.na(gene_info_new$nominations),]
+gene_info_old[gene_info_old$ensembl_gene_id %in% c("ENSG00000069712","ENSG00000083622","ENSG00000093100","ENSG00000100101","ENSG00000103200"),]
 ```
+
+
+
+
+# Cross-file investigation of genes w/o hgnc/name
+
+get ensgs for rows with no hgnc
+```{r}
+v <- validator(field_length(hgnc_symbol, min = 2, max = 100))
+cf <- confront(gene_info_new, v)
+out <- values(cf)
+is_unique_fails <- gene_info_new[!out,]
+ensgs <- is_unique_fails[[1]]
+print(ensgs)
+print(is_unique_fails[order(is_unique_fails$ensembl_gene_id),])
+```
+
+
+how many of them are missing median_expression data? 18255/20011
+```{r}
+me_nulls <- sum(is_unique_fails[13] == "NULL")
+
+```
+
+how many have RNA DE data?
+```{r}
+rnade_matches <- rna_seq_differential_expression_new$ensembl_gene_id %in% ensgs
+#print(sum(rnade_matches))
+
+rnade_results <- rna_seq_differential_expression_new[rnade_matches,] 
+
+rnade_rows <- rnade_results[order(rnade_results$ensembl_gene_id),]
+
+rnade_ensgs <- table(rnade_rows$ensembl_gene_id)
+print(length(rnade_ensgs))
+
+```
+
+how many have proteomic data?
+```{r}
+prot_matches <- proteomics_new$ensemble_gene_id %in% ensgs
+print(sum(prot_matches))
+
+```
+
+how many have metabolomic data?

@@ -29,7 +29,7 @@ rules_proteomics <- validator(
   
   # tissue
   is.character(tissue),
-  field_length(tissue, min=2, max=6), 
+  tissue %vin% c("AntPFC", "DLPFC", "MFG", "TCX"),
   
   # uniprotid
   is.character(uniprotid), 

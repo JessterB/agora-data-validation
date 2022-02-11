@@ -51,6 +51,40 @@ test(get(new_name), get(rules))
 # Validation failure investigations
 ***
 
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(tissue %vin% c("AntPFC", "DLPFC", "MFG", "TCX"))
+cf <- confront(proteomics_new, v)
+out <- values(cf)
+is_unique_fails <- proteomics_new[!out,]
+is_unique_fails
+```
+
+
+## AG-349 validation
+### cor_pval > 0: 7680 fails
+### pval > 0: 7680 fails
+
+- same number of 0s we had before! - fixed
+
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(pval > 0)
+cf <- confront(proteomics_new, v)
+out <- values(cf)
+is_unique_fails <- proteomics_new[!out,]
+is_unique_fails
+```
+
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(cor_pval > 0)
+cf <- confront(proteomics_new, v)
+out <- values(cf)
+is_unique_fails <- proteomics_new[!out,]
+is_unique_fails
+```
+
 ## cor_pval > 0: 7740 fails
 ## pval > 0: 7776 fails
 
@@ -61,6 +95,7 @@ test(get(new_name), get(rules))
 
 Did the old data have this issue?
 * Old file had 7680 cor_pval == NA and 7680 pval == NA
+
 => New file has +60 (cor_pval) and +96 (pval) unexpected 0s
 
 Did the source data have the issue?
@@ -186,9 +221,11 @@ proteomics_source[proteomics_source$UniqID == "PURA|Q00577",]
 
 ## 	is_unique(ensemble_gene_id, uniprotid, tissue): 24 fails
 
+
 Analysis results:
-* The 26 dups appear to be due to divergent hgnc values that aren't actually hgnc values but are protein names   
-* These dup rows with weird hgncs are in both the old data and the source data   
+* The 24 dups appear to be due to divergent hgnc values that aren't actually hgnc values but are protein names   
+* These dup rows with weird hgncs are in both the old data and the source data 
+* AG-338
 
 
 Resolution:     
@@ -216,6 +253,15 @@ is_unique_fails[order(is_unique_fails$uniprotid, is_unique_fails$tissue),]
 
 ```{r}
 proteomics_old[proteomics_old$ensembl_gene_id == "ENSG00000172867",]
+```
+
+
+```{r}
+proteomics_source[proteomics_source$ENSG == "ENSG00000178462",]
+```
+
+```{r}
+proteomics_source[proteomics_source$ENSG == "ENSG00000166548",]
 ```
 
 

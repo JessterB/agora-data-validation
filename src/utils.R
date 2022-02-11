@@ -1,26 +1,32 @@
+# TODO: 
+# - write html files into /archive
+# - 
 
-
-# Ensures we have the packages we need
+# Install and/or load the required packages
 prepare <- function() {
     if (!require("synapser")) { install.packages("synapser", repos = c("http://ran.synapse.org", "http://cran.fhcrc.org")) }
     if (!require("jsonlite")) { install.packages("jsonlite") }
     if (!require("tidyverse")) { install.packages("tidyverse") }
     if (!require("sqldf")) { install.packages("sqldf") }
     if (!require("validate")) { install.packages("validate") }
-    #if (!require("arrow")) { install.packages("arrow") } # for feather files; causes some errors so enable only when needed
     library(synapser)
     library(jsonlite)
     library(tidyverse)
     library(sqldf)
     library(validate)
+  
+    # for feather files; causes some errors so enable only when needed
+    #if (!require("arrow")) { install.packages("arrow") } 
+    #library(arrow)
     synLogin()
   }
 
-# Downloads the specified pair of files from Synapse & makes them available
+# Downloads the specified pair of files from Synapse & makes them available as a dataframe
 # globally as dataframes named 'name_old' and 'name_new'
 # - old_synId  SynapseId of the older version of the file
 # - new_synId  SynapseId of the newer version of the file
 # - name   Name prefix for the resulting global dataframes
+# - type - The type of file being downloaded: json, csv, tsv, or f [see the comment in prepare() above to use feather]
 # - quiet  Whether to print additional information
 
 download_files <- function(old_synId, new_synId, name, type = 'json', quiet = TRUE) {
@@ -39,10 +45,10 @@ download_files <- function(old_synId, new_synId, name, type = 'json', quiet = TR
   }
 }
 
-# Downloads the specified file from Synapse  
-# synId  SynapseId of the file
-# name   Name for the downloaded file
-# quiet  Whether to print debug information
+# Downloads the specified file from Synapse and parses the contents into a dataframe
+# - synId  SynapseId of the file
+# - name   The name to use for the dataframe
+# - quiet  Whether to print debug information
 
 download_file <- function(synId, df_name, type = 'json', quiet = TRUE) {
   
@@ -53,7 +59,7 @@ download_file <- function(synId, df_name, type = 'json', quiet = TRUE) {
   file <- synGet(synId, downloadLocation = "files/")
   
   # TODO are there other metadata values worth printing out here?
-  cat(paste0(synId, "\n- Modified on ", file$properties$createdOn, "\n- Version ", file$properties$versionNumber, "\n"))
+  cat(paste0(synId, "\n- Modified on ", file$properties$modifiedOn, "\n- Version ", file$properties$versionNumber, "\n"))
 
   path <- file$path
   if (type == 'f') { 
@@ -69,10 +75,10 @@ download_file <- function(synId, df_name, type = 'json', quiet = TRUE) {
 
 
 # Compares the specified pair of files
-# old   The first file's name
-# new   The second file's name
-# name  Friendly name for the pair of files being compared, e.g. gene_info
-# summarize  Whether to print out a summary() for each file
+# - old   The first file's name
+# - new   The second file's name
+# - name  Friendly name for the pair of files being compared, e.g. gene_info
+# - summarize  Whether to print out a summary() for each file
 
 # TODO this could be improved once our field names stabilize
 compare <- function(old, new, name, summarize = TRUE) {
@@ -92,9 +98,47 @@ compare <- function(old, new, name, summarize = TRUE) {
   }
 }
 
+# Compares the specified subobject in the specified pair of files
+# - old   The first file's name
+# - new   The second file's name
+# - subname_old  The key of the subobject in the old file
+# - subname_new The key of the subobject in the new file, if different from the key in the old file
+
+compare_subobjects <- function(old, new, subname_old, subname_new = subname_old) {
+
+  old_subobj <- old[[subname_old]]
+  new_subobj <- new[[subname_new]]
+  
+  # Find a row in the dataframe where the subobject exists
+  for (i in 1:length(old_subobj)) {
+    if (class(old_subobj[[i]]) == "data.frame") {
+      idx_old <- i
+      break
+    }
+  }
+  
+  for (j in 1:length(new_subobj)) {
+    if (class(new_subobj[[j]]) == "data.frame") {
+      idx_new <- j
+      break
+    }
+  }
+
+  colnames_old <- colnames(old_subobj[[idx_old]])
+  colnames_new <- colnames(new_subobj[[idx_new]])
+  
+  cat("\n\nOld Column Names", str_sort(colnames_old), sep="\n- ")
+  cat("\nNew Column Names", str_sort(colnames_new), sep="\n- ")
+  
+  cat("\n\nColumns dropped: ", setdiff(colnames_old,colnames_new), sep="\n- ")
+  cat("\n\nColumns added: ", setdiff(colnames_new,colnames_old), sep="\n- ")
+}
+
+
+
 # Prints out a summary information about a dataframe
-# dataframe  The dataframe to summarize
-# name       Friendly name for the dataframe
+# - dataframe  The dataframe to summarize
+# - name       Friendly name for the dataframe
 
 summarize <- function(dataframe, name) {
   cat("\n\nSummary ", name, "\n")
@@ -102,9 +146,9 @@ summarize <- function(dataframe, name) {
 }
 
 
-# Applies a set of rules to a dataframe for validation
-# dataframe  The dataframe to validate
-# rules      The rules to apply
+# Applies the specified set of rules to the specified dataframe for validation
+# - dataframe  The dataframe to validate
+# - rules      The rules to apply
 
 test <- function(df, rules) {
   out <- confront(df, rules)
@@ -112,4 +156,27 @@ test <- function(df, rules) {
   print(errors(out))  # uncomment to debug rule errors
   print(summary(out))
   #plot(out)   # this is interesting but seems buggy
+}
+
+# Extracts the specified nested dataframe from the specified parent dataframe and 
+# applies the specified set of rules to that extracted dataframe for validation
+# - dataframe  The dataframe to validate
+# - subname    The name of the nested object
+# - rules      The rules to apply
+test_subobject <- function(df, subname, rules) {
+  
+  subdf <- get_subobject(df, subname)
+  
+  out <- confront(subdf, rules)
+  print(errors(out))  # uncomment to debug rule errors
+  print(summary(out))
+  
+}
+
+# Extracts the specified nested dataframe from the specified parent dataframe 
+# - dataframe  The dataframe to validate
+# - subname    The name of the nested object
+get_subobject <- function(df, subname) {
+  sublist <- df[[subname]]
+  bind_rows(sublist)
 }

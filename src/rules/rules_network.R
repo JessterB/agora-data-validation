@@ -3,7 +3,7 @@ rules_network <- validator(
   # brainregion - we call this tissue elsewhere
   is.character(brainregion),
   !is.na(brainregion),
-  field_length(brainregion, min=2, max=5), # valid for the 9 current regions,
+  brainregion %in% c("CBE", "DLPFC", "FP", "IFG", "PHG", "STG", "TCX"),
   
   # genea_ensembl_gene_id
   is.character(genea_ensembl_gene_id),
