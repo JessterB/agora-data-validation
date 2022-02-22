@@ -52,6 +52,26 @@ test(get(new_name), get(rules))
 # Validation failure investigations
 ***
 
+## AG-: 1262 new entities
+TODO
+
+
+## 	is_unique(brainregion, genea_ensembl_gene_id, geneb_ensembl_gene_id, genea_external_gene_name, geneb_external_gene_name)
+
+
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(is_unique(brainregion, genea_ensembl_gene_id, geneb_ensembl_gene_id, genea_external_gene_name, geneb_external_gene_name))
+cf <- confront(network_new, v)
+out <- values(cf)
+is_unique_fails <- network_new[!out,]
+is_unique_fails
+```
+```{r}
+gene_info_new[gene_info_new$hgnc_symbol == 'AJ009632.2',]
+gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000229425',]
+```
+
 
 ## field_length(genea_external_gene_name, min = 2, max = 100)
 318 fails
@@ -59,7 +79,9 @@ test(get(new_name), get(rules))
 Analysis results:  
 - all 318 fails are due to blank strings  
 - the old data file did not have any of these  
-- Filed AG-346 for tracking (combined with next issue)  
+- Filed AG-345 for tracking (combined with next issue)  
+- All missing hgncs are also missing in gene_info
+=> same as AG-334
 
 
 
@@ -77,6 +99,20 @@ Do we see this in the old file? -> no
 network_old[network_old$geneA_external_gene_name == "", ]
 ```
 
+Spot check missing hgnc against gene_info:
+```{r}
+no_hgnc <- network_new[network_new$genea_external_gene_name == "", ]
+no_hgnc_ensgs <- unique(no_hgnc$genea_ensembl_gene_id)
+
+gene_info_new[gene_info_new$ensembl_gene_id %in% no_hgnc_ensgs, ]
+```
+Spot check missing hgnc against gene_info:
+```{r}
+no_hgnc <- network_new[network_new$geneb_external_gene_name == "", ]
+no_hgncb_ensgs <- unique(no_hgnc$geneb_ensembl_gene_id)
+
+gene_info_new[gene_info_new$ensembl_gene_id %in% no_hgncb_ensgs, ]
+```
 
 ***
 ## field_length(geneb_external_gene_name, min = 2, max = 100)
@@ -85,7 +121,7 @@ network_old[network_old$geneA_external_gene_name == "", ]
 Analysis results:  
 - all 216 fails are due to blank strings as gene names  
 - the old data file did not have any of these  
-- Filed AG-346 for tracking (combined with previous issue)  
+- Filed AG-345 for tracking (combined with previous issue)  
 
 ```{r}
 network_new[network_new$geneb_external_gene_name == "", ]
@@ -139,7 +175,7 @@ new_hgnc <- network_new %>%
   group_by(brainregion, genea_external_gene_name, geneb_external_gene_name) %>% 
   mutate(dupe = n()>1)
 dups_new_hgnc <- new_hgnc[new_hgnc$dupe == TRUE,]
-dups_new_hgnc
+dups_new_hgnc[order(dups_new_hgnc$geneb_ensembl_gene_id),]
 ```
 
 

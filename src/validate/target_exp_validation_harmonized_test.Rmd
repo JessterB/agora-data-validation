@@ -51,7 +51,7 @@ test(get(new_name), get(rules))
 # Validation failure investigations
 ***
 
-## 	field_length(ensembl_gene_id, n = 15): 1 fail
+## 	AG-351: field_length(ensembl_gene_id, n = 15): 1 fail
 
 * This is from the source data
 * AG-351

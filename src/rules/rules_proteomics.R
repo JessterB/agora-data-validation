@@ -6,14 +6,16 @@ rules_proteomics <- validator(
   # ci_upr
   is.numeric(ci_upr),
   
-  # cor_pval - TODO does cor mean corrected? is this equivalent to an adjusted pval?
+  # cor_pval 
   is.numeric(cor_pval),
-  cor_pval > 0,  # TODO some fails here
+  cor_pval > 0,  
   
   # ensemble_gene_id
   is.character(ensemble_gene_id),
   !is.na(ensemble_gene_id),
   field_length(ensemble_gene_id, n=15),
+  
+  
   
   # hgnc_gene_id
   is.character(hgnc_gene_id),

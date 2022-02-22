@@ -1,6 +1,9 @@
 ---
 title: "team_info_test"
 output: html_notebook
+knit: (function(inputFile, encoding) {
+    rmarkdown::render(inputFile, encoding = encoding, output_dir = "~/Pictures")
+  })
 ---
 
 ```{r eval=FALSE, echo=FALSE}
@@ -54,7 +57,7 @@ test(get(new_name), get(rules))
 
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule
-v <- validator(field_length(description, min = 10, max = 20))
+v <- validator(field_length(description, min = 10, max = 2000))
 cf <- confront(team_info_new, v)
 out <- values(cf)
 is_unique_fails <- team_info_new[!out,]

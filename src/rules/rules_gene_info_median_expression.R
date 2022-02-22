@@ -2,6 +2,7 @@ rules_gene_info_median_expression <- validator(
   
   # medianlogcpm
   is.numeric(medianlogcpm),
+  
   !is.na(medianlogcpm),
   
   # tissue

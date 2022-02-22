@@ -51,12 +51,86 @@ test(get(new_name), get(rules))
 # Validation failure investigations
 ***
 
+```{r}
+unscored_omics_old <- overall_scores_old[is.na(overall_scores_old$OmicsScore),]
+unscored_omics_ensg <- unscored_omics_old$ENSG
+print(unscored_omics_old)
+
+overall_scores_new[overall_scores_new$ensg == 'ENSG00000170190']
+
+```
+
+
+
+## AG-370: 5467 missing entities
+
+* a diff by ENSG shows that there are actually 4065 new & 9532 missing score records
+
+
+```{r}
+new_ensgs <- unique(overall_scores_new$ensg)
+old_ensgs <- unique(overall_scores_old$ENSG)
+
+unique_ensgs_new <- setdiff(new_ensgs, old_ensgs)
+unique_ensgs_old <- setdiff(old_ensgs, new_ensgs)
+diff <- length(unique_ensgs_old) - length(unique_ensgs_new)
+
+cat('\nUnique ENSGs new: ', length(unique_ensgs_new))
+cat('\nUnique ENSGs old: ', length(unique_ensgs_old))
+
+cat('\nLength diff: ', diff)
+```
+
+Are the missing ENSGs still in the source data?
+
+```{r}
+# TODO support synapse table source files
+
+```
+
+Manual spot checking via table query in synapse:
+-> see AG-370 for results
+
+```{r}
+overall_scores_new[overall_scores_new$ensg == 'ENSG00000125255',]
+overall_scores_old[overall_scores_old$ENSG == 'ENSG00000125255',]
+
+overall_scores_new[overall_scores_new$hgnc_gene_id == 'SLC10A2',]
+overall_scores_old[overall_scores_old$GeneName == 'SLC10A2',]  # why does this suck?
+
+
+gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000125255',]
+gene_info_old[gene_info_old$ensembl_gene_id == 'ENSG00000125255',]
+
+gene_info_new[gene_info_new$hgnc_symbol == 'SLC10A2',]
+gene_info_old[gene_info_old$hgnc_symbol == 'SLC10A2',]
+
+```
+
+separate the no-hgnc cases from the rest for further characterization
+```{r}
+new_no_hgnc <- overall_scores_new[overall_scores_new$hgnc_gene_id == '',]
+new_no_hgnc_ensgs <- new_no_hgnc$ensg
+length(unique_ensgs_new)
+length(new_no_hgnc_ensgs)
+
+unique_ensgs_not_blank_hgnc <- setdiff(unique_ensgs_new, new_no_hgnc_ensgs)
+length(unique_ensgs_not_blank_hgnc)
+head(unique_ensgs_not_blank_hgnc)
+
+head(unique_ensgs_old)
+```
+
+
+
+
+
 ## field_length(hgnc_gene_id, min = 2, max = 100): 5745 fails
 
 - All fails are due to blank string hgnc values  
 - The old file had even more NAs  
 - These are all missing lit scores, but that makes sense because gene names are used for the pubmed searches  
-- Agora can display the scores with NA GeneName values just file  
+- Agora can display the scores with NA GeneName values just fine  
 - if the app doesn't already handle missing vs blank strings here, it shouldn't be too hard to fix that  
 
 
@@ -74,13 +148,176 @@ overall_scores_old[is.na(overall_scores_old$GeneName),]
 
 
 
-## is.numeric(literaturescore)
+## RESOLVED: AG-337 - is.numeric(literaturescore)
 Analysis results:  
 - lit score is a string, the other scores are still numeric  
 - AG-337  
 
 
+## reimplementation validation
+
+new source data
 ```{r}
-class(overall_scores_new$literaturescore)
+overall_table_new <- synTableQuery("select * from syn25575156", resultsAs='csv')
+overall_scores_source_new <- as.data.frame(overall_table_new)
+```
+
+old source data
+```{r}
+overall_table_old <- synTableQuery("select * from syn25575156.6", resultsAs='csv')
+overall_scores_source_old <- as.data.frame(overall_table_old)
+```
+
+
+Overall score
+Source new total rows: 23737
+- 0 values: 233
+
+Source old total rows: 32720
+- 0 values: 4287
+
+JSON new total entities:23386
+- 0 values: 966
+
+JSON old total entities: 28853
+- 0 values: 641
+
+
+```{r}
+overall_source_new_zeros <- overall_scores_source_new[overall_scores_source_new$Overall == 0,]
+print(c("Source new: # rows total: ", nrow(overall_scores_source_new)))
+print(c("Source new: # rows == 0:  ", nrow(overall_source_new_zeros)))
+```
+
+```{r}
+overall_source_old_zeros <- overall_scores_source_old[overall_scores_source_old$Logsdon == 0,]
+print(c("Source old: # rows total: ", nrow(overall_scores_source_old)))
+print(c("Source old: # rows == 0:  ", nrow(overall_source_old_zeros)))
+```
+
+```{r}
+overall_json_new_zeros <- overall_scores_new[overall_scores_new$overall == 0,]
+print(c("json new: # rows total: ", nrow(overall_scores_new)))
+print(c("json new: # rows == 0:  ", nrow(overall_json_new_zeros)))
+```
+
+```{r}
+overall_json_old_zeros <- overall_scores_old[overall_scores_old$Logsdon == 0,]
+print(c("json old: # rows total: ", nrow(overall_scores_old)))
+print(c("json old: # rows == 0:  ", nrow(overall_json_old_zeros)))
+```
+
+
+
+
+
+
+
+Genetics score
+Source new total rows: 23737
+- 0 values: 418
+- Scored genes: 23319
+
+Source old total rows: 23386
+- 0 values: 1657
+- NA values: 
+
+JSON new total entities:23386
+- 0 values: 1657
+
+JSON old total entities: 28853
+- 0 values: 1149
+
+
+```{r}
+overall_source_new_zeros <- overall_scores_source_new[overall_scores_source_new$GeneticsScore == 0,]
+overall_source_new_scored <- overall_scores_source_new[overall_scores_source_new$isScored_genetics == "Y",]
+print(c("Source new: # rows total: ", nrow(overall_scores_source_new)))
+print(c("Source new: # rows == 0:  ", nrow(overall_source_new_zeros)))
+print(c("Source new: # scored: ", nrow(overall_source_new_scored)))
+```
+
+```{r}
+overall_source_old_zeros <- overall_scores_source_old[overall_scores_source_old$GeneticsScore == 0,]
+overall_source_old_scored <- overall_scores_source_old[overall_scores_source_old$isScored_genetics == "Y",]
+print(c("Source old: # rows total: ", nrow(overall_scores_source_old)))
+print(c("Source old: # rows == 0:  ", nrow(overall_source_old_zeros)))
+print(c("Source old: # scored: ", nrow(overall_source_old_scored)))
+```
+
+```{r}
+overall_json_new_zeros <- overall_scores_new[overall_scores_new$geneticsscore == 0,]
+print(c("json new: # rows total: ", nrow(overall_scores_new)))
+print(c("json new: # rows == 0:  ", nrow(overall_json_new_zeros)))
+```
+
+```{r}
+overall_json_old_zeros <- overall_scores_old[overall_scores_old$GeneticsScore == 0,]
+print(c("json old: # rows total: ", nrow(overall_scores_old)))
+print(c("json old: # rows == 0:  ", nrow(overall_json_old_zeros)))
+```
+
+
+
+
+
+Genomics score
+Source new total rows: 23737
+- 0 values: 418
+
+Source old total rows: 23386
+- 0 values: 1657
+
+JSON new total entities:23386
+- 0 values: 0
+
+JSON old total entities: 28853
+- 0 values: 1149
+
+```{r}
+overall_source_new_zeros <- overall_scores_source_new[overall_scores_source_new$OmicsScore == 0,]
+print(c("Source new: # rows total: ", nrow(overall_scores_source_new)))
+print(c("Source new: # rows == 0:  ", nrow(overall_source_new_zeros)))
+```
+
+```{r}
+overall_source_old_zeros <- overall_scores_source_old[overall_scores_source_old$OmicsScore == 0,]
+print(c("Source old: # rows total: ", nrow(overall_scores_source_old)))
+print(c("Source old: # rows == 0:  ", nrow(overall_source_old_zeros)))
+```
+
+```{r}
+overall_json_new_zeros <- overall_scores_new[overall_scores_new$GeneticsScore == 0,]
+print(c("json new: # rows total: ", nrow(overall_scores_new)))
+print(c("json new: # rows == 0:  ", nrow(overall_json_new_zeros)))
+```
+
+```{r}
+overall_json_old_zeros <- overall_scores_old[overall_scores_old$GeneticsScore == 0,]
+print(c("json old: # rows total: ", nrow(overall_scores_old)))
+print(c("json old: # rows == 0:  ", nrow(overall_json_old_zeros)))
+```
+
+
+
+Spot check old and new by ensg
+- Some values have changed slightly, probably expected since scoring methodology changed
+
+```{r}
+old_ensgs <- overall_scores_old$ENSG
+old_ensgs_seg <- old_ensgs[1:10]
+
+for (eid in old_ensgs_seg) {
+  row_old <- overall_scores_old[overall_scores_old$ENSG == eid,]
+  row_new <- overall_scores_new[overall_scores_new$ensg == eid,]
+  cat(c("\n\nENSG:", eid, 
+          "\nGenetics: ", row_old$GeneticsScore, "->", row_new$geneticsscore,
+          "\nGenomics: ", row_old$OmicsScore, "->", row_new$omicsscore,
+          "\nLit: ", row_old$LiteratureScore, "->", row_new$literaturescore
+))
+}
 
 ```
+
+
+

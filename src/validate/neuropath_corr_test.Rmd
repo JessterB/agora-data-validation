@@ -78,7 +78,9 @@ neuropath_corr_source[nas_source,]
 
 
 
-## pval > 0: 19 fails
+## RESOLVED: AG-348 - pval > 0: 19 fails
+
+fixed via AG-349 custom json serialization fix
 
 Analysis results:  
 * All 19 have pval == 0  

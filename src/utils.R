@@ -21,7 +21,7 @@ prepare <- function() {
     synLogin()
   }
 
-# Downloads the specified pair of files from Synapse & makes them available as a dataframe
+# Downloads the specified pair of files from Synapse & makes them available 
 # globally as dataframes named 'name_old' and 'name_new'
 # - old_synId  SynapseId of the older version of the file
 # - new_synId  SynapseId of the newer version of the file
@@ -56,10 +56,17 @@ download_file <- function(synId, df_name, type = 'json', quiet = TRUE) {
     cat(paste0("Downloading ", synId, "..."))
   }
   
-  file <- synGet(synId, downloadLocation = "files/")
+  if (type == 'table') { 
+    cat(c("select * from", synId))
+    file <- synTableQuery("select * from ", resultsAs='csv')
+  } else {
+    file <- synGet(synId, downloadLocation = "files/")
+  }
+
   
   # TODO are there other metadata values worth printing out here?
-  cat(paste0(synId, "\n- Modified on ", file$properties$modifiedOn, "\n- Version ", file$properties$versionNumber, "\n"))
+  cat("\nDownload on:  ", date())
+  cat(paste0("\n", synId, "\n- Modified on ", file$properties$modifiedOn, "\n- Version ", file$properties$versionNumber, "\n"))
 
   path <- file$path
   if (type == 'f') { 
@@ -67,7 +74,7 @@ download_file <- function(synId, df_name, type = 'json', quiet = TRUE) {
     data <- read_feather(path)
     } else {
     if (type == 'json') { data <- fromJSON(path) }
-    if (type == 'csv') { data <- read.csv(path) }
+    if (type == 'csv' || type == 'table') { data <- read.csv(path) }
     if (type == 'tsv') { data <- read.csv(path, sep = "\t") }
     df_name <<- as.data.frame(data) 
   }

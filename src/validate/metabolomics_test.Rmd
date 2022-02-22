@@ -46,17 +46,36 @@ source("~/repos/rstudio/agora-data-validation/src/rules/rules_metabolomics.R")
 test(get(new_name), get(rules))
 ```
 
+***
+# Outstanding validation failures
+***
+
+Spot checking of the source data indicates that these duplicates are not created by our processing; note that the dups do have unique ENSGs:
+* is_unique(associated_gene_name): 438 fails
+* is_unique(associated_gene_name, metabolite_id): 231 fails
 
 ***
 # Validation failure investigations
 ***
 
-## association_p > 0: 62 fails
+## RESOLVED: AG-347 - association_p > 0: 62 fails
+
+fixed by custom json serializer via AG-349
+
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(	association_p > 0)
+cf <- confront(metabolomics_new, v)
+out <- values(cf)
+is_unique_fails <- metabolomics_new[!out,]
+is_unique_fails
+```
 
 Analysis results:  
 - all fails are from association_p == 0  
 - the old data file didn't have these  
 - none in the source data either  
+
 
 ```{r}
 metabolomics_new[metabolomics_new$association_p == 0, ]

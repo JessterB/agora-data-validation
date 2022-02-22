@@ -51,6 +51,48 @@ test(get(new_name), get(rules))
 # Validation failure investigations
 ***
 
+## info for MattC
+
+```{r}
+not0 <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$adj_p_val >0,]
+
+max_lfc <- max(rna_seq_differential_expression_new$logfc)
+min_lfc <- min(rna_seq_differential_expression_new$logfc)
+max_adjP <- max(rna_seq_differential_expression_new$adj_p_val)
+min_adjP <- min(not0$adj_p_val)
+
+cat("\nLFC \n  max: ", max_lfc, "\n  min: ", min_lfc, "\nadj_p_val \n  max: ", max_adjP, "\n  min: ", min_adjP)
+```
+```{r}
+
+clean <- rna_seq_differential_expression_old[!is.na(rna_seq_differential_expression_old$logfc),]
+
+max_lfc <- max(clean$logfc)
+min_lfc <- min(clean$logfc)
+max_adjP <- max(clean$adj_p_val)
+min_adjP <- min(clean$adj_p_val)
+
+cat("\nLFC \n  max: ", max_lfc, "\n  min: ", min_lfc, "\nadj_p_val \n  max: ", max_adjP, "\n  min: ", min_adjP)
+```
+
+
+## AG-369: 1092 extra entities came from where?
+
+TODO
+
+
+```{r}
+
+```
+```{r}
+sqldf('SELECT * from rna_seq_differential_expression_new where ensembl_gene_id ="ENSG00000000003" and tissue = "FP"')
+```
+
+```{r}
+sqldf('SELECT * from rna_seq_differential_expression_old where ensembl_gene_id ="ENSG00000000003" and tissue = "FP"')
+```
+
+
 ## 	field_length(ensembl_gene_id, n = 15): 1 fail
 
 

@@ -53,7 +53,7 @@ test(get(new_name), get(rules))
 
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule
-v <- validator(tissue %vin% c("AntPFC", "DLPFC", "MFG", "TCX"))
+v <- validator(cor_pval > 0)
 cf <- confront(proteomics_new, v)
 out <- values(cf)
 is_unique_fails <- proteomics_new[!out,]
@@ -61,11 +61,11 @@ is_unique_fails
 ```
 
 
-## AG-349 validation
+## RESOLVED: AG-349 validation
 ### cor_pval > 0: 7680 fails
 ### pval > 0: 7680 fails
 
-- same number of 0s we had before! - fixed
+- same number of 0s we had before! - MattF fixed via custom json serializer
 
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule
@@ -219,7 +219,7 @@ proteomics_source[proteomics_source$UniqID == "PURA|Q00577",]
 ```
 
 
-## 	is_unique(ensemble_gene_id, uniprotid, tissue): 24 fails
+## 	AG-338: is_unique(ensemble_gene_id, uniprotid, tissue): 24 fails
 
 
 Analysis results:

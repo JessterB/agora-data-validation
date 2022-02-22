@@ -40,6 +40,7 @@ compare(get(old_name), get(new_name), name, summarize=FALSE)
 
 ## Compare old & new subobjects
 
+
 ### median_expression
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
@@ -98,7 +99,11 @@ test_subobject(get(new_name), "median_expression", get(subrules))
 
 ***
 # Validation failure investigations
-***
+
+## 3556 new entities
+
+
+
 ```{r}
 v <- validator(field_length(validation_study_details, min = 20, max = 1000))
 cf <- confront(subobj, v)
@@ -206,3 +211,106 @@ print(sum(prot_matches))
 ```
 
 how many have metabolomic data?
+
+
+## Misc investigations
+
+AG-168 - are the missing nominations in the new file??
+
+```{r}
+targets_source <- download_file("syn12540368", "targets_source", "csv")
+```
+
+how many nominated targets should we have according to the source data? => 693
+```{r}
+nrow(targets_source)
+```
+
+how many targets did we have in the old file? => 668/693
+```{r}
+old_targets <- get_subobject(gene_info_old, "nominatedtarget")
+nrow(old_targets)
+```
+
+Which 25 are missing?
+```{r}
+source_ensgs <- targets_source$ensembl_gene_id
+source_hgncs <- targets_source$hgnc_symbol
+
+gene_info_old[gene_info_old$ensembl_gene_id %in% source_ensgs, ]
+
+```
+
+
+how many targets are in the old file? => 692/693
+```{r}
+new_targets <- get_subobject(gene_info_new, "nominated_target")
+source_ensgs <- targets_source[targets_source$ensembl_gene_id]
+nrow(new_targets)
+```
+What's missing?
+- 19 genes from source were missing in old and are present in new
+
+```{r}
+ #ensg <- 'ENSG00000283632' EXOC3L2 - this needs special examination because it throws an error (hence the else below)
+
+i <- 1
+
+for (ensg in source_ensgs) {
+source_nomination <- targets_source[targets_source$ensembl_gene_id == ensg,]
+old_row <- gene_info_old[gene_info_old$ensembl_gene_id == ensg,]
+new_row <- gene_info_new[gene_info_new$ensembl_gene_id == ensg,]
+
+old_nomination <- old_row$nominatedtarget
+new_nomination <- new_row$nominated_target
+
+if (length(old_nomination) > 0) {
+  print(c(i, ensg, length(source_nomination), length(old_nomination[[1]]), length(new_nomination[[1]])))
+} else {
+    print(c(i, ensg, length(source_nomination), "--",  "--"))
+}
+
+
+i <- i + 1
+}
+```
+
+```{r}
+i <- 1
+
+for (hgnc in source_hgncs) {
+source_nomination <- targets_source[targets_source$hgnc_symbol == hgnc,]
+old_row <- gene_info_old[gene_info_old$hgnc_symbol == hgnc,]
+new_row <- gene_info_new[gene_info_new$hgnc_symbol == hgnc,]
+
+old_nomination <- old_row$nominatedtarget
+new_nomination <- new_row$nominated_target
+
+#print(hgnc)
+
+if (length(old_nomination) > 0 && length(new_nomination) > 0) {
+  print(c(i, hgnc, length(source_nomination), length(old_nomination[[1]]), length(new_nomination[[1]])))
+} else {
+    print(c(i, hgnc, length(source_nomination), "--",  "--"))
+}
+
+
+i <- i + 1
+}
+```
+
+
+ENSG00000283632 EXOC3L2 is missing from both old and new gene_info, why???
+
+```{r}
+ensg <- 'ENSG00000246451'
+hgnc <- 'KLC1-AS1'
+
+targets_source[targets_source$ensembl_gene_id == ensg,]
+gene_info_old[gene_info_old$ensembl_gene_id == ensg,]
+gene_info_new[gene_info_new$ensembl_gene_id == ensg,]
+
+targets_source[targets_source$hgnc_symbol == hgnc,]
+gene_info_old[gene_info_old$hgnc_symbol == hgnc,]
+gene_info_new[gene_info_new$hgnc_symbol ==  hgnc,]
+```

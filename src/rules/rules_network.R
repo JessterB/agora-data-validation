@@ -27,6 +27,7 @@ rules_network <- validator(
   
   # multifield uniques
   is_unique(brainregion, genea_ensembl_gene_id, geneb_ensembl_gene_id), # TODO fails here
-  is_unique(brainregion, genea_external_gene_name, geneb_external_gene_name) # TODO fails here
+  is_unique(brainregion, genea_external_gene_name, geneb_external_gene_name),
+  is_unique(brainregion, genea_ensembl_gene_id, geneb_ensembl_gene_id, genea_external_gene_name, geneb_external_gene_name)# TODO fails here
   
 )
