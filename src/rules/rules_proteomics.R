@@ -10,17 +10,17 @@ rules_proteomics <- validator(
   is.numeric(cor_pval),
   cor_pval > 0,  
   
-  # ensemble_gene_id
-  is.character(ensemble_gene_id),
-  !is.na(ensemble_gene_id),
-  field_length(ensemble_gene_id, n=15),
+  # ensembl_gene_id
+  is.character(ensembl_gene_id),
+  !is.na(ensembl_gene_id),
+  field_length(ensembl_gene_id, n=15),
   
   
   
   # hgnc_gene_id
-  is.character(hgnc_gene_id),
-  !is.na(hgnc_gene_id),
-  field_length(hgnc_gene_id, min=2, max=100),
+  is.character(hgnc_symbol),
+  !is.na(hgnc_symbol),
+  field_length(hgnc_symbol, min=2, max=100),
   
   # log2_fc
   is.numeric(log2_fc),
@@ -43,7 +43,7 @@ rules_proteomics <- validator(
   
   # multi-field uniques
   #is_unique(ensemble_gene_id, uniprotid, tissue), # see analysis for why this rule fails
-  is_unique(hgnc_gene_id, uniprotid, tissue),
+  is_unique(hgnc_symbol, uniprotid, tissue),
   is_unique(uniqid, tissue)
   
 )

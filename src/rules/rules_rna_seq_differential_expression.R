@@ -2,7 +2,7 @@ rules_rna_seq_differential_expression <- validator(
   
   # adj_p_val
   is.numeric(adj_p_val),
-  adj_p_val > 0,  # TODO 100 fails
+  adj_p_val > 0, 
   
   # ci_l
   is.numeric(adj_p_val),
@@ -21,7 +21,7 @@ rules_rna_seq_differential_expression <- validator(
   # hgnc_symbol
   is.character(hgnc_symbol),
   !is.na(hgnc_symbol),
-  field_length(hgnc_symbol, min=2, max=100),
+  field_length(hgnc_symbol, min=0, max=100),
   
   # logfc
   is.numeric(adj_p_val),
@@ -29,6 +29,7 @@ rules_rna_seq_differential_expression <- validator(
   # model
   is.character(model),
   field_length(model, min=26, max=100), # valid for the 4 current models
+  model %in% c("AD Diagnosis (males and females)", "AD Diagnosis x AOD (males and females)","AD Diagnosis x Sex (females only)", "AD Diagnosis x Sex (males only)"),
   
   # study
   is.character(study),

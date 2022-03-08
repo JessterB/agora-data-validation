@@ -9,15 +9,13 @@ prepare <- function() {
     if (!require("tidyverse")) { install.packages("tidyverse") }
     if (!require("sqldf")) { install.packages("sqldf") }
     if (!require("validate")) { install.packages("validate") }
+    if (!require("arrow")) { install.packages("arrow") } 
     library(synapser)
     library(jsonlite)
     library(tidyverse)
     library(sqldf)
     library(validate)
-  
-    # for feather files; causes some errors so enable only when needed
-    #if (!require("arrow")) { install.packages("arrow") } 
-    #library(arrow)
+    library(arrow)
     synLogin()
   }
 
@@ -55,28 +53,28 @@ download_file <- function(synId, df_name, type = 'json', quiet = TRUE) {
   if(!quiet) {
     cat(paste0("Downloading ", synId, "..."))
   }
-  
+
   if (type == 'table') { 
-    cat(c("select * from", synId))
-    file <- synTableQuery("select * from ", resultsAs='csv')
+    sel_statement <- paste("SELECT * FROM", synId, collapse=" ")
+    file <- synTableQuery(sel_statement, resultsAs='csv')
+    path <- file$filepath
   } else {
     file <- synGet(synId, downloadLocation = "files/")
+    path <- file$path
   }
 
   
   # TODO are there other metadata values worth printing out here?
   cat("\nDownload on:  ", date())
-  cat(paste0("\n", synId, "\n- Modified on ", file$properties$modifiedOn, "\n- Version ", file$properties$versionNumber, "\n"))
+  cat("\n", synId, "\n- Modified on ", file$properties$modifiedOn, "\n- Version ", file$properties$versionNumber, "\n")
 
-  path <- file$path
   if (type == 'f') { 
-    print('Did you remember to uncomment the arrow package in utils.prepare()?')
     data <- read_feather(path)
     } else {
     if (type == 'json') { data <- fromJSON(path) }
     if (type == 'csv' || type == 'table') { data <- read.csv(path) }
     if (type == 'tsv') { data <- read.csv(path, sep = "\t") }
-    df_name <<- as.data.frame(data) 
+    df_name <- as.data.frame(data) 
   }
 }
 
@@ -89,8 +87,9 @@ download_file <- function(synId, df_name, type = 'json', quiet = TRUE) {
 
 # TODO this could be improved once our field names stabilize
 compare <- function(old, new, name, summarize = TRUE) {
-  cat("\nNumber of Records \n- old: ", nrow(old), "\n- new: ", nrow(new))
-  cat("\n\nNumber of Columns \n- old :", ncol(old), "\n- new: ", ncol(new))
+  cat("\nNumber of Records \n- old: ", nrow(old), "\n- new: ", nrow(new), "\nChange: ", nrow(new) - nrow(old))
+  cat("\n\nNumber of Columns \n- old :", ncol(old), "\n- new: ", ncol(new), "\nChange: ", ncol(new) - ncol(old))
+
   old_cols <- colnames(old)
   new_cols <- colnames(new)
   cat("\n\nOld Column Names", str_sort(old_cols), sep="\n- ")

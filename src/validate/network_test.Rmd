@@ -13,7 +13,9 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 old_synId <-  "syn12523173" 
-new_synId <-  "syn26868935"
+# new_synId <-  "syn26868935" # test_data_full
+new_synId <- "syn27408190" # test_data_release_1.0.0
+
 name <- "network"
 
 # not file-specific
@@ -47,30 +49,55 @@ source("~/repos/rstudio/agora-data-validation/src/rules/rules_network.R")
 test(get(new_name), get(rules))
 ```
 
+***
+# Outstanding validation failures
+***
+These are due to blank string hgnc_symbols, see AG-345:
+
+* field_length(geneA_external_gene_name, min = 2, max = 100): 318 fails
+
+* field_length(geneB_external_gene_name, min = 2, max = 100): 216 fails
+
+These are all records with the same geneB, see AG-346:
+
+* is_unique(brainRegion, geneA_ensembl_gene_id, geneB_ensembl_gene_id): 144 fails
 
 ***
 # Validation failure investigations
 ***
 
-## AG-: 1262 new entities
-TODO
-
-
-## 	is_unique(brainregion, genea_ensembl_gene_id, geneb_ensembl_gene_id, genea_external_gene_name, geneb_external_gene_name)
-
-
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule
-v <- validator(is_unique(brainregion, genea_ensembl_gene_id, geneb_ensembl_gene_id, genea_external_gene_name, geneb_external_gene_name))
+v <- validator(RULE)
 cf <- confront(network_new, v)
 out <- values(cf)
 is_unique_fails <- network_new[!out,]
 is_unique_fails
 ```
+
+##	is_unique(brainRegion, geneA_ensembl_gene_id, geneB_ensembl_gene_id)
+144 fails
+
+See AG-346
+
 ```{r}
-gene_info_new[gene_info_new$hgnc_symbol == 'AJ009632.2',]
-gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000229425',]
+v <- validator(is_unique(brainRegion, geneA_ensembl_gene_id, geneB_ensembl_gene_id))
+cf <- confront(network_new, v)
+out <- values(cf)
+is_unique_fails <- network_new[!out,]
+is_unique_fails
 ```
+
+```{r}
+is_unique_fails[is_unique_fails$geneB_external_gene_name == 'AJ009632.2',]
+```
+
+144 fails are due to 77 pairs of duplicate records, all have identical geneB_*  values:
+
+* geneb_external_gene_name == AJ009632.2
+
+* geneb_ensembl_gene_id == ENSG00000229425
+
 
 
 ## field_length(genea_external_gene_name, min = 2, max = 100)
@@ -132,74 +159,4 @@ network_new[network_new$geneb_external_gene_name == "", ]
 - Do we see this in the old file? -> no
 ```{r}
 network_old[network_old$geneB_external_gene_name == "", ]
-```
-
-***
-
-## is_unique(brainregion, genea_ensembl_gene_id, geneb_ensembl_gene_id)
-144 fails
-
-Analysis results:  
-- all 144 fails are due to identical pairs of duplicate records  
-- the old data file did not have any of these  
-- Filed AG-346 for tracking (combined with next issue)  
-
-```{r}
-new_ensg <- network_new %>% 
-  group_by(brainregion, genea_ensembl_gene_id, geneb_ensembl_gene_id) %>% 
-  mutate(dupe = n()>1)
-dups_new_ensg <- new_ensg[new_ensg$dupe == TRUE,]
-dups_new_ensg
-```
-
-
-Check for these in the old file:
-
-```{r}
-old_ensg <- network_old %>% 
-  group_by(brainRegion, geneA_ensembl_gene_id, geneB_ensembl_gene_id) %>% 
-  mutate(dupe = n()>1)
-old_ensg[old_ensg$dupe == TRUE,]
-```
-***
-## is_unique(brainregion, genea_external_gene_name, geneb_external_gene_name)
-198 fails
-
-Analysis results:  
-- all 198 fails are due to identical pairs of duplicate records  
-- the old data file did not have any of these  
-- Filed AG-346 for tracking (combined with previous issue)  
-
-```{r}
-new_hgnc <- network_new %>% 
-  group_by(brainregion, genea_external_gene_name, geneb_external_gene_name) %>% 
-  mutate(dupe = n()>1)
-dups_new_hgnc <- new_hgnc[new_hgnc$dupe == TRUE,]
-dups_new_hgnc[order(dups_new_hgnc$geneb_ensembl_gene_id),]
-```
-
-
-Check for these in the old file:
-
-```{r}
-old_hgnc <- network_old %>% 
-  group_by(brainRegion, geneA_external_gene_name, geneB_external_gene_name) %>% 
-  mutate(dupe = n()>1)
-old_hgnc[old_hgnc$dupe == TRUE,]
-```
-
-
-144 records duplicate across all fields:
-```{r}
-new_all <- network_new %>% 
-  group_by(brainregion, genea_external_gene_name, geneb_external_gene_name, genea_ensembl_gene_id, geneb_ensembl_gene_id) %>% 
-  mutate(dupe = n()>1)
-dups_new_all <- new_all[new_all$dupe == TRUE,]
-dups_new_all
-```
-
-
-The 54 records that have dup ensg but not hgnc:
-```{r}
-dups_new_hgnc[dups_new_hgnc$geneb_external_gene_name != 'AJ009632.2', ]
 ```

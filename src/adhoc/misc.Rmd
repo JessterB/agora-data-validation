@@ -1,0 +1,51 @@
+---
+title: "REPLACEME.json"
+output: html_notebook
+---
+
+```{r eval=FALSE, echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+prepare()
+```
+
+```{r}
+stats_file <- download_file("syn27211878", "stats_file", "csv")
+median_file <- download_file("syn12514804", "median_file", "csv")
+
+```
+
+```{r}
+# find 10 genes that are in both files
+# "CBE", "DLPFC", "FP", "IFG", "PHG", "STG", "TCX",
+
+#median_ensgs <- median_file$ensembl_gene_id
+
+  for (i in 1:10) {
+    ensg <- median_ensgs[[i]]
+    stats <- stats_file[stats_file$ensembl_gene_id == ensg,]
+    median <- median_file[median_file$ensembl_gene_id == ensg,]
+    
+    for (tissue in c("CBE", "DLPFC", "FP", "IFG", "PHG", "STG", "TCX")) {
+      tissue_stats <- stats[stats$tissue == tissue,]
+      tissue_median <- median[median$tissue == tissue,]
+      
+      cat("\n", ensg, tissue, "\nStats: ", tissue_stats$medianLogCPM, tissue_stats$meanLogCPM,"\nMedian: ", tissue_median$ medianLogCPM)
+      
+    }
+  }
+
+
+```
+
+
+
+Anna Greenwood (she/her)  12:25 PM
+Just new rows. What is the best way to validate that the ENSEMBL ids and gene names are going to be compatable?
+12:26
+ENSG00000130202	NECTIN2
+ENSG00000064300	NGFR
+
+```{r}
+gene_info_new[gene_info_new$ensembl_gene_id %in% c('ENSG00000130202', 'ENSG00000064300'),]
+
+```

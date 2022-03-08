@@ -12,7 +12,9 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 old_synId <-  "syn12548902" 
-new_synId <-  "syn26868959"
+# new_synId <-  "syn26868959" # test_data_full
+new_synId <- "syn27407632" # test_data_release_1.0.0
+
 name <- "gene_info"
 
 # not file-specific
@@ -44,7 +46,7 @@ compare(get(old_name), get(new_name), name, summarize=FALSE)
 ### median_expression
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare_subobjects(get(old_name), get(new_name), "medianexpression", "median_expression")
+compare_subobjects(get(old_name), get(new_name), "medianexpression", "medianexpression")
 ```
 
 ### druggability
@@ -56,7 +58,7 @@ compare_subobjects(get(old_name), get(new_name), "druggability")
 ### nominated_target
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare_subobjects(get(old_name), get(new_name), "nominatedtarget", "nominated_target")
+compare_subobjects(get(old_name), get(new_name), "nominatedtarget", "nominatedtarget")
 ```
 
 
@@ -75,7 +77,7 @@ source("~/repos/rstudio/agora-data-validation/src/utils.R")
 source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info_nominated_target.R")
 
 subrules <- paste0(rules, "_nominated_target")
-test_subobject(get(new_name), "nominated_target", get(subrules))
+test_subobject(get(new_name), "nominatedtarget", get(subrules))
 ```
 
 ### druggability
@@ -93,22 +95,23 @@ source("~/repos/rstudio/agora-data-validation/src/utils.R")
 source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info_median_expression.R")
 
 subrules <- paste0(rules, "_median_expression")
-test_subobject(get(new_name), "median_expression", get(subrules))
+test_subobject(get(new_name), "medianexpression", get(subrules))
 ```
+
+***
+# Outstanding validation failures
+***
+* nominated target: field_length(data_used_to_support_target_selection, min = 15, max = 2000): 2 fails - see AG-365
 
 
 ***
 # Validation failure investigations
-
-## 3556 new entities
-
-
-
 ```{r}
-v <- validator(field_length(validation_study_details, min = 20, max = 1000))
-cf <- confront(subobj, v)
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(VALIDATION_RULE)
+cf <- confront(DATAFRAME, v)
 out <- values(cf)
-is_unique_fails <- subobj[!out,]
+is_unique_fails <- DATAFRAME[!out,]
 is_unique_fails
 ```
 
@@ -120,6 +123,7 @@ Analysis:
 - These values are missing in both the old data (verified in app & mongo) and in the source data
 - Only impacts two genes (REST, HDAC1)
 - The app doesn't conditionally handle this, so we have a header with no content for these
+
 
 ```{r}
 subobj <- get_subobject(gene_info_new, "nominated_target")
@@ -142,17 +146,29 @@ nominated_target_source[nominated_target_source$hgnc_symbol %in% c("REST", "HDAC
 
 
 ## uniques
+- 21,293 non-unique hgncs
+- 1,282 of these aren't blank strings -> mostly small rnas
+
 ```{r}
 v <- validator(is_unique(hgnc_symbol))
 cf <- confront(gene_info_new, v)
 out <- values(cf)
+
 is_unique_fails <- gene_info_new[!out,]
+dup_hgnc_fails <- is_unique_fails[is_unique_fails$hgnc_symbol != "",]
+sorted_dups <- dup_hgnc_fails[order(dup_hgnc_fails$hgnc_symbol),]
+
 print(is_unique_fails)
-print(is_unique_fails[is_unique_fails$hgnc_symbol != "",])
+print(sorted_dups)
 ```
 
 
 ## field_length(hgnc_symbol, min = 2, max = 100): 20011 fails
+- blank hgnc
+- blank name
+
+Resolution: Relax the rules for both hgnc and name
+
 ```{r}
 v <- validator(field_length(hgnc_symbol, min = 2, max = 100))
 cf <- confront(gene_info_new, v)
@@ -183,13 +199,15 @@ print(is_unique_fails[order(is_unique_fails$ensembl_gene_id),])
 ```
 
 
-how many of them are missing median_expression data? 18255/20011
+how many of them are missing median_expression data? 
+-> 18255/20011
 ```{r}
 me_nulls <- sum(is_unique_fails[13] == "NULL")
-
+print(me_nulls)
 ```
 
 how many have RNA DE data?
+->
 ```{r}
 rnade_matches <- rna_seq_differential_expression_new$ensembl_gene_id %in% ensgs
 #print(sum(rnade_matches))
@@ -207,10 +225,13 @@ how many have proteomic data?
 ```{r}
 prot_matches <- proteomics_new$ensemble_gene_id %in% ensgs
 print(sum(prot_matches))
-
 ```
 
 how many have metabolomic data?
+```{r}
+met_matches <- metabolomics_new$ensemble_gene_id %in% ensgs
+print(sum(met_matches))
+```
 
 
 ## Misc investigations
@@ -245,7 +266,7 @@ gene_info_old[gene_info_old$ensembl_gene_id %in% source_ensgs, ]
 how many targets are in the old file? => 692/693
 ```{r}
 new_targets <- get_subobject(gene_info_new, "nominated_target")
-source_ensgs <- targets_source[targets_source$ensembl_gene_id]
+source_ensgs <- targets_source$ensembl_gene_id
 nrow(new_targets)
 ```
 What's missing?
@@ -304,7 +325,7 @@ ENSG00000283632 EXOC3L2 is missing from both old and new gene_info, why???
 
 ```{r}
 ensg <- 'ENSG00000246451'
-hgnc <- 'KLC1-AS1'
+hgnc <- 'RP11-894P9.1'
 
 targets_source[targets_source$ensembl_gene_id == ensg,]
 gene_info_old[gene_info_old$ensembl_gene_id == ensg,]
@@ -313,4 +334,43 @@ gene_info_new[gene_info_new$ensembl_gene_id == ensg,]
 targets_source[targets_source$hgnc_symbol == hgnc,]
 gene_info_old[gene_info_old$hgnc_symbol == hgnc,]
 gene_info_new[gene_info_new$hgnc_symbol ==  hgnc,]
+```
+
+
+```{r}
+ensg <- 'ENSG00000162771'
+hgnc <- 'FAM71A'
+
+targets_source[targets_source$ensembl_gene_id == ensg,]
+gene_info_old[gene_info_old$ensembl_gene_id == ensg,]
+gene_info_new[gene_info_new$ensembl_gene_id == ensg,]
+
+targets_source[targets_source$hgnc_symbol == hgnc,]
+gene_info_old[gene_info_old$hgnc_symbol == hgnc,]
+gene_info_new[gene_info_new$hgnc_symbol ==  hgnc,]
+```
+
+
+AG-252/AG-409
+
+```{r}
+sum(is.na(gene_info_new$isAnyRNAChangedInADBrain))
+sum(is.na(gene_info_new$isAnyProteinChangedInADBrain))
+sum(is.na(gene_info_new$isIGAP))
+sum(is.na(gene_info_new$haseqtl))
+
+sum(!is.na(gene_info_new$isAnyRNAChangedInADBrain))
+sum(!is.na(gene_info_new$isAnyProteinChangedInADBrain))
+sum(!is.na(gene_info_new$isIGAP))
+sum(!is.na(gene_info_new$haseqtl))
+
+nrow(gene_info_new)
+```
+
+New genes
+```{r}
+old_ensgs <- gene_info_old$ensembl_gene_id
+new_ensgs <- gene_info_new$ensembl_gene_id
+
+setdiff(new_ensgs, old_ensgs)
 ```

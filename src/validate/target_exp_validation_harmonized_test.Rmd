@@ -13,7 +13,9 @@ prepare()
 # file-specific
 name <- "target_exp_validation_harmonized"
 old_synId <-  "syn25741027" 
-new_synId <-  "syn26868915"
+#new_synId <-  "syn26868915" # test_data_full
+new_synId <- "syn27407750" # test_data_release_1.0.0
+
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")
@@ -46,6 +48,11 @@ source("~/repos/rstudio/agora-data-validation/src/rules/rules_target_exp_validat
 test(get(new_name), get(rules))
 ```
 
+***
+# Outstanding validation failures
+***
+
+* field_length(ensembl_gene_id, n = 15): 1 fail - See AG-351
 
 ***
 # Validation failure investigations
@@ -77,8 +84,8 @@ is this from the source data?
 target_exp_validation_harmonized_source <- download_file("syn24184512", "target_exp_validation_harmonized", type = "csv")
 ```
 
-=> yes indeed it is! (row 149)
+=> yes 
 
 ```{r}
-target_exp_validation_harmonized_source[target_exp_validation_harmonized_source$Team == "Mayo-UFL-ISB",]
+target_exp_validation_harmonized_source[target_exp_validation_harmonized_source$hgnc_symbol == "FC1 (mouse)",]
 ```

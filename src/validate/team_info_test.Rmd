@@ -15,7 +15,9 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 old_synId <-  "syn12616884" 
-new_synId <-  "syn26868917"
+#new_synId <-  "syn26868917" # test_data_full
+new_synId <- "syn27407772" # test_data_release_1.0.0
+
 name <- "team_info"
 
 # not file-specific
@@ -49,6 +51,10 @@ source("~/repos/rstudio/agora-data-validation/src/rules/rules_team_info.R")
 test(get(new_name), get(rules))
 ```
 
+***
+# Outstanding validation failures
+***
+N/A
 
 ***
 # Validation failure investigations
@@ -57,9 +63,21 @@ test(get(new_name), get(rules))
 
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule
-v <- validator(field_length(description, min = 10, max = 2000))
+v <- validator(RULE)
 cf <- confront(team_info_new, v)
 out <- values(cf)
 is_unique_fails <- team_info_new[!out,]
 is_unique_fails
+```
+
+***
+# Other validation
+***
+
+2 new teams
+```{r}
+teams <- team_info_old$team
+
+team_info_new[!team_info_new$team %in% teams,]
+
 ```

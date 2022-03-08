@@ -12,7 +12,9 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 old_synId <-  "syn19315964" 
-new_synId <-  "syn26868927"
+# new_synId <-  "syn26868927" # test_data_full
+new_synId <- "syn27408161" # test_data_release_1.0.0
+
 name <- "metabolomics"
 
 # not file-specific
@@ -51,62 +53,14 @@ test(get(new_name), get(rules))
 ***
 
 Spot checking of the source data indicates that these duplicates are not created by our processing; note that the dups do have unique ENSGs:
+
 * is_unique(associated_gene_name): 438 fails
+
 * is_unique(associated_gene_name, metabolite_id): 231 fails
 
 ***
 # Validation failure investigations
 ***
-
-## RESOLVED: AG-347 - association_p > 0: 62 fails
-
-fixed by custom json serializer via AG-349
-
-```{r}
-# yields a dataframe containing the failure cases for a specific rule
-v <- validator(	association_p > 0)
-cf <- confront(metabolomics_new, v)
-out <- values(cf)
-is_unique_fails <- metabolomics_new[!out,]
-is_unique_fails
-```
-
-Analysis results:  
-- all fails are from association_p == 0  
-- the old data file didn't have these  
-- none in the source data either  
-
-
-```{r}
-metabolomics_new[metabolomics_new$association_p == 0, ]
-```
-
-Check for these in the old file:
-```{r}
-metabolomics_old[metabolomics_old$association_p == 0, ]
-```
-
-
-Source data (syn26064497)
-```{r}
-download_file("syn26064497", "metabolomics_source", type="f")
-metabolomics_source_file <- synGet("syn26064497", downloadLocation = "files/")
-metabolomics_source <- read_feather(metabolomics_source_file$path)
-```
-
-Check for these in the source data:
-```{r}
-metabolomics_df <- as.data.frame(metabolomics_source)
-ass_p <- (pull(metabolomics_source, "association_p"))
-length(ass_p[ass_p == 0])
-```
-
-
-Check specific cases in source data:
-```{r}
-metabolomics_source[metabolomics_source$associated_gene_name %in% c("MYH16", "AOC1", "TMEM176A", "CYP3A43", "ANAPC5", "PXN", "BUD31", "PTCD1", "CYP3A5", "ZKSCAN1"),]
-```
-
 
 ## is_unique(associated_gene_name): 438 fails
 
@@ -207,7 +161,9 @@ setdiff(dups_new_hgnc_sorted, dups_new_all_sorted)
 ```
 
 
-
+```{r}
+metabolomics_source <- download_file("syn26064497", "metabolomics_source", "f")
+```
 
 duplicates with differing p-values exist in the source data
 ```{r}

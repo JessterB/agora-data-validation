@@ -1,209 +1,209 @@
 rules_distribution_data <- validator(
-  # geneticsscore.bins.1
-  is.numeric(geneticsscore.bins.1),
-  !is.na(geneticsscore.bins.1),
-  geneticsscore.bins.1 >= 0,
+  # GeneticsScore.bins.1
+  is.numeric(GeneticsScore.bins.1),
+  !is.na(GeneticsScore.bins.1),
+  GeneticsScore.bins.1 >= 0,
   
-  # geneticsscore.bins.2
-  is.numeric(geneticsscore.bins.2),
-  !is.na(geneticsscore.bins.2),
-  geneticsscore.bins.2 > 0,
+  # GeneticsScore.bins.2
+  is.numeric(GeneticsScore.bins.2),
+  !is.na(GeneticsScore.bins.2),
+  GeneticsScore.bins.2 > 0,
   
-  # geneticsscore.distribution
-  is.numeric(geneticsscore.distribution),
-  !is.na(geneticsscore.distribution),
-  geneticsscore.distribution >= 0,
+  # GeneticsScore.distribution
+  is.numeric(GeneticsScore.distribution),
+  !is.na(GeneticsScore.distribution),
+  GeneticsScore.distribution >= 0,
   
-  # geneticsscore.first_quartile
-  is.numeric(geneticsscore.first_quartile),
-  # TODO validate this if fixed and/or we want to start using it
+  # GeneticsScore.first_quartile
+  is.numeric(GeneticsScore.first_quartile),
+  # TODO better validation of this field if fixed and/or we want to start using it
   
-  # geneticsscore.max
-  is.numeric(geneticsscore.max),
-  # TODO validate this if fixed and/or we want to start using it
+  # GeneticsScore.max
+  is.numeric(GeneticsScore.max),
+  # TODO better validation of this field if fixed and/or we want to start using it
   
-  # geneticsscore.mean
-  is.numeric(geneticsscore.mean),
-  # TODO validate this if fixed and/or we want to start using it
+  # GeneticsScore.mean
+  is.numeric(GeneticsScore.mean),
+  # TODO better validation of this field if fixed and/or we want to start using it
   
-  # geneticsscore.min
-  is.numeric(geneticsscore.min),
-  # TODO validate this if fixed and/or we want to start using it
+  # GeneticsScore.min
+  is.numeric(GeneticsScore.min),
+  # TODO better validation of this field if fixed and/or we want to start using it
   
-  # geneticsscore.name
-  is.character(geneticsscore.name),
-  !is.na(geneticsscore.name),
-  geneticsscore.name == "Genetics Score",
+  # GeneticsScore.name
+  is.character(GeneticsScore.name),
+  !is.na(GeneticsScore.name),
+  GeneticsScore.name == "Genetics Score",
   
-  # geneticsscore.syn_id
-  is.character(geneticsscore.syn_id),
-  !is.na(geneticsscore.syn_id),
-  geneticsscore.syn_id == "syn25913473",
+  # GeneticsScore.syn_id
+  is.character(GeneticsScore.syn_id),
+  !is.na(GeneticsScore.syn_id),
+  GeneticsScore.syn_id == "syn25913473",
   
-  # geneticsscore.third_quartile
-  is.numeric(geneticsscore.third_quartile),
-  # TODO validate this if fixed and/or we want to start using it
+  # GeneticsScore.third_quartile
+  is.numeric(GeneticsScore.third_quartile),
+  # TODO better validation of this field if fixed and/or we want to start using it
   
-  # geneticsscore.wiki_id
-  is.character(geneticsscore.wiki_id),
-  !is.na(geneticsscore.wiki_id),
-  geneticsscore.wiki_id == '613104',
-  
-  
-  
-  
-  # literaturescore.bins.1
-  is.numeric(literaturescore.bins.1),
-  !is.na(literaturescore.bins.1),
-  literaturescore.bins.1 >= 0,
-  
-  # literaturescore.bins.2
-  is.numeric(literaturescore.bins.2),
-  !is.na(literaturescore.bins.2),
-  literaturescore.bins.2 >= 0,
-  
-  # literaturescore.distribution
-  is.numeric(literaturescore.distribution),
-  !is.na(literaturescore.distribution),
-  literaturescore.distribution >= 0,
-  
-  # literaturescore.first_quartile
-  is.numeric(literaturescore.first_quartile),
-  # TODO validate this if fixed and/or we want to start using it
-  
-  # literaturescore.max
-  is.numeric(literaturescore.max),
-  # TODO validate this if fixed and/or we want to start using it
-  
-  # literaturescore.mean
-  is.numeric(literaturescore.mean),
-  # TODO validate this if fixed and/or we want to start using it
-  
-  # literaturescore.min
-  is.numeric(literaturescore.min),
-  # TODO validate this if fixed and/or we want to start using it
-  
-  # literaturescore.name
-  is.character(literaturescore.name),
-  !is.na(literaturescore.name),
-  
-  # literaturescore.syn_id
-  is.character(literaturescore.syn_id),
-  !is.na(literaturescore.syn_id),
-  literaturescore.syn_id== 'syn25913473',
-  
-  # literaturescore.third_quartile
-  is.numeric(literaturescore.third_quartile),
-  # TODO validate this if fixed and/or we want to start using it
-  
-  # literaturescore.wiki_id
-  is.character(literaturescore.wiki_id),
-  !is.na(literaturescore.wiki_id),
-  literaturescore.wiki_id == '613105',
+  # GeneticsScore.wiki_id
+  is.character(GeneticsScore.wiki_id),
+  !is.na(GeneticsScore.wiki_id),
+  GeneticsScore.wiki_id == '613104',
   
   
   
-  # logsdon.bins.1
-  is.numeric(logsdon.bins.1),
-  !is.na(logsdon.bins.1),
-  logsdon.bins.1 >= 0,
   
-  # logsdon.bins.2
-  is.numeric(logsdon.bins.2),
-  !is.na(logsdon.bins.2),
-  logsdon.bins.2 >= 0,
+  # LiteratureScore.bins.1
+  is.numeric(LiteratureScore.bins.1),
+  !is.na(LiteratureScore.bins.1),
+  LiteratureScore.bins.1 >= 0,
   
-  # logsdon.distribution
-  is.numeric(logsdon.distribution),
-  !is.na(logsdon.distribution),
-  logsdon.distribution >= 0,
+  # LiteratureScore.bins.2
+  is.numeric(LiteratureScore.bins.2),
+  !is.na(LiteratureScore.bins.2),
+  LiteratureScore.bins.2 >= 0,
   
-  # logsdon.first_quartile
-  is.numeric(logsdon.first_quartile),
-  # TODO validate this if fixed and/or we want to start using it
+  # LiteratureScore.distribution
+  is.numeric(LiteratureScore.distribution),
+  !is.na(LiteratureScore.distribution),
+  LiteratureScore.distribution >= 0,
+  
+  # LiteratureScore.first_quartile
+  is.numeric(LiteratureScore.first_quartile),
+  # TODO better validation of this field if fixed and/or we want to start using it
+  
+  # LiteratureScore.max
+  is.numeric(LiteratureScore.max),
+  # TODO better validation of this field if fixed and/or we want to start using it
+  
+  # LiteratureScore.mean
+  is.numeric(LiteratureScore.mean),
+  # TODO better validation of this field if fixed and/or we want to start using it
+  
+  # LiteratureScore.min
+  is.numeric(LiteratureScore.min),
+  # TODO better validation of this field if fixed and/or we want to start using it
+  
+  # LiteratureScore.name
+  is.character(LiteratureScore.name),
+  !is.na(LiteratureScore.name),
+  
+  # LiteratureScore.syn_id
+  is.character(LiteratureScore.syn_id),
+  !is.na(LiteratureScore.syn_id),
+  LiteratureScore.syn_id== 'syn25913473',
+  
+  # LiteratureScore.third_quartile
+  is.numeric(LiteratureScore.third_quartile),
+  # TODO better validation of this field if fixed and/or we want to start using it
+  
+  # LiteratureScore.wiki_id
+  is.character(LiteratureScore.wiki_id),
+  !is.na(LiteratureScore.wiki_id),
+  LiteratureScore.wiki_id == '613105',
+  
+  
+  
+  # Logsdon.bins.1
+  is.numeric(Logsdon.bins.1),
+  !is.na(Logsdon.bins.1),
+  Logsdon.bins.1 >= 0,
+  
+  # Logsdon.bins.2
+  is.numeric(Logsdon.bins.2),
+  !is.na(Logsdon.bins.2),
+  Logsdon.bins.2 >= 0,
+  
+  # Logsdon.distribution
+  is.numeric(Logsdon.distribution),
+  !is.na(Logsdon.distribution),
+  Logsdon.distribution >= 0,
+  
+  # Logsdon.first_quartile
+  is.numeric(Logsdon.first_quartile),
+  # TODO better validation of this field if fixed and/or we want to start using it
   
   # logsdon.max
-  is.numeric(logsdon.max),
-  # TODO validate this if fixed and/or we want to start using it
+  is.numeric(Logsdon.max),
+  # TODO better validation of this field if fixed and/or we want to start using it
   
-  # logsdon.mean
-  is.numeric(logsdon.mean),
-  # TODO validate this if fixed and/or we want to start using it
+  # Logsdon.mean
+  is.numeric(Logsdon.mean),
+  # TODO better validation of this field if fixed and/or we want to start using it
   
-  # logsdon.min
-  is.numeric(logsdon.min),
-  # TODO validate this if fixed and/or we want to start using it
+  # Logsdon.min
+  is.numeric(Logsdon.min),
+  # TODO better validation of this field if fixed and/or we want to start using it
   
-  # logsdon.name
-  is.character(logsdon.name),
-  !is.na(logsdon.name),
-  logsdon.name == 'Overall Score',
+  # Logsdon.name
+  is.character(Logsdon.name),
+  !is.na(Logsdon.name),
+  Logsdon.name == 'Overall Score',
   
-  # logsdon.syn_id
-  is.character(logsdon.syn_id),
-  !is.na(logsdon.syn_id),
-  logsdon.syn_id == 'syn25913473',
+  # Logsdon.syn_id
+  is.character(Logsdon.syn_id),
+  !is.na(Logsdon.syn_id),
+  Logsdon.syn_id == 'syn25913473',
   
-  # logsdon.third_quartile
-  is.numeric(logsdon.third_quartile),
-  # TODO validate this if fixed and/or we want to start using it
+  # Logsdonn.third_quartile
+  is.numeric(Logsdon.third_quartile),
+  # TODO better validation of this field if fixed and/or we want to start using it
   
-  # logsdon.wiki_id
-  is.character(logsdon.wiki_id),
-  !is.na(logsdon.wiki_id),
-  logsdon.wiki_id == '613107',
+  # Logsdon.wiki_id
+  is.character(Logsdon.wiki_id),
+  !is.na(Logsdon.wiki_id),
+  Logsdon.wiki_id == '613107',
   
   
   
-  # omicsscore.bins.1
-  is.numeric(omicsscore.bins.1),
-  !is.na(omicsscore.bins.1),
-  omicsscore.bins.1 >= 0,
+  # OmicsScore.bins.1
+  is.numeric(OmicsScore.bins.1),
+  !is.na(OmicsScore.bins.1),
+  OmicsScore.bins.1 >= 0,
   
-  # omicsscore.bins.2
-  is.numeric(omicsscore.bins.2),
-  !is.na(omicsscore.bins.2),
-  omicsscore.bins.2 >= 0,
+  # OmicsScore.bins.2
+  is.numeric(OmicsScore.bins.2),
+  !is.na(OmicsScore.bins.2),
+  OmicsScore.bins.2 >= 0,
   
-  # omicsscore.distribution
-  is.numeric(omicsscore.distribution),
-  !is.na(omicsscore.distribution),
-  omicsscore.distribution >= 0,
+  # OmicsScore.distribution
+  is.numeric(OmicsScore.distribution),
+  !is.na(OmicsScore.distribution),
+  OmicsScore.distribution >= 0,
   
-  # omicsscore.first_quartile
-  is.numeric(omicsscore.first_quartile),
-  # TODO validate this if fixed and/or we want to start using it
+  # OmicsScore.first_quartile
+  is.numeric(OmicsScore.first_quartile),
+  # TODO better validation of this field if fixed and/or we want to start using it
   
-  # omicsscore.max
-  is.numeric(omicsscore.max),
-  # TODO validate this if fixed and/or we want to start using it
+  # OmicsScore.max
+  is.numeric(OmicsScore.max),
+  # TODO better validation of this field if fixed and/or we want to start using it
   
-  # omicsscore.mean
-  is.numeric(omicsscore.mean),
-  # TODO validate this if fixed and/or we want to start using it
+  # OmicsScore.mean
+  is.numeric(OmicsScore.mean),
+  # TODO better validation of this field if fixed and/or we want to start using it
   
-  # omicsscore.min
-  is.numeric(omicsscore.min),
-  # TODO validate this if fixed and/or we want to start using it
+  # OmicsScore.min
+  is.numeric(OmicsScore.min),
+  # TODO better validation of this field if fixed and/or we want to start using it
   
-  # omicsscore.name
-  is.character(omicsscore.name),
-  !is.na(omicsscore.name),
-  omicsscore.name == 'Genomics Score',
+  # OmicsScore.name
+  is.character(OmicsScore.name),
+  !is.na(OmicsScore.name),
+  OmicsScore.name == 'Genomics Score',
   
-  # omicsscore.syn_id
-  is.character(omicsscore.syn_id),
-  !is.na(omicsscore.syn_id),
-  omicsscore.syn_id == 'syn25913473',
+  # OmicsScore.syn_id
+  is.character(OmicsScore.syn_id),
+  !is.na(OmicsScore.syn_id),
+  OmicsScore.syn_id == 'syn25913473',
   
-  # omicsscore.third_quartile
-  is.numeric(omicsscore.third_quartile),
-  # TODO validate this if fixed and/or we want to start using it
+  # OmicsScore.third_quartile
+  is.numeric(OmicsScore.third_quartile),
+  # TODO better validation of this field if fixed and/or we want to start using it
   
-  # omicsscore.wiki_id
-  is.character(omicsscore.wiki_id),
-  !is.na(omicsscore.wiki_id),
-  omicsscore.wiki_id == '613106'
+  # OmicsScore.wiki_id
+  is.character(OmicsScore.wiki_id),
+  !is.na(OmicsScore.wiki_id),
+  OmicsScore.wiki_id == '613106'
   
   
 )

@@ -12,7 +12,9 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 old_synId <-  "syn18693175" 
-new_synId <-  "syn26868914"
+# new_synId <-  "syn26868914" # test_data_full
+new_synId <- "syn27407745" # test_data_release_1.0.0
+
 name <- "proteomics"
 
 # not file-specific
@@ -45,6 +47,14 @@ source("~/repos/rstudio/agora-data-validation/src/utils.R")
 source("~/repos/rstudio/agora-data-validation/src/rules/rules_proteomics.R")
 test(get(new_name), get(rules))
 ```
+***
+# Outstanding validation failures
+***
+These come from the source data:
+
+* cor_pval > 0: 7680 fails
+
+* pval > 0: 7680 fails
 
 
 ***
@@ -53,7 +63,7 @@ test(get(new_name), get(rules))
 
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule
-v <- validator(cor_pval > 0)
+v <- validator(RULE)
 cf <- confront(proteomics_new, v)
 out <- values(cf)
 is_unique_fails <- proteomics_new[!out,]
@@ -65,7 +75,8 @@ is_unique_fails
 ### cor_pval > 0: 7680 fails
 ### pval > 0: 7680 fails
 
-- same number of 0s we had before! - MattF fixed via custom json serializer
+- now 7440 fails, which is the same number of 0s we had before! 
+- MattF fixed via custom json serializer
 
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule
@@ -84,9 +95,6 @@ out <- values(cf)
 is_unique_fails <- proteomics_new[!out,]
 is_unique_fails
 ```
-
-## cor_pval > 0: 7740 fails
-## pval > 0: 7776 fails
 
 * All cor_pval fails due to cor_pval == 0 
 * All pval fails due to pval == 0
@@ -145,6 +153,11 @@ cat("\nci_lwr: ",nrow(cor_pval_old_na[is.na(cor_pval_old_na$ci_lwr),])) # 7680
 ```{r}
 proteomics_source <- download_file("syn18689335", "proteomics_source", type="csv")
 ```
+
+```{r}
+proteomics_source[proteomics_source$GeneName == 'PLEC',]
+```
+
 
 ```{r}
 cor_pval_source_na <- proteomics_source[is.na(proteomics_source$Cor_PVal),] 

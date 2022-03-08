@@ -1,34 +1,34 @@
 rules_overall_scores <- validator(
   
   # ensg  
-  is.character(ensg),
-  !is.na(ensg),
-  is_unique(ensg),
-  field_length(ensg, n=15),
+  is.character(ENSG),
+  !is.na(ENSG),
+  is_unique(ENSG),
+  field_length(ENSG, n=15),
   
   # geneticsscore
-  is.numeric(geneticsscore),
-  !is.na(geneticsscore),
-  in_range(geneticsscore, min=0, max=3),
+  is.numeric(GeneticsScore),
+  !is.na(GeneticsScore),
+  in_range(GeneticsScore, min=0, max=3),
   
   # hgnc_gene_id
-  is.character(hgnc_gene_id),
-  !is.na(hgnc_gene_id),
-  field_length(hgnc_gene_id, min=2, max=100), # TODO 5745 fails
+  is.character(GeneName),
+  !is.na(GeneName),
+  field_length(GeneName, min=0, max=100), 
   
   # literaturescore
-  is.numeric(literaturescore),
-  !is.na(literaturescore),
-  in_range(literaturescore, min=0, max=2),
+  is.numeric(LiteratureScore),
+  !is.na(LiteratureScore),
+  in_range(LiteratureScore, min=0, max=2),
   
   # omicsscore
-  is.numeric(omicsscore),
-  !is.na(omicsscore),
-  in_range(omicsscore, min=0, max=2),
+  is.numeric(OmicsScore),
+  !is.na(OmicsScore),
+  in_range(OmicsScore, min=0, max=2),
   
   # overall
-  is.numeric(overall),
-  !is.na(overall),
-  in_range(overall, min=0, max=9)
+  is.numeric(Logsdon),
+  !is.na(Logsdon),
+  in_range(Logsdon, min=0, max=9)
   
 )

@@ -9,14 +9,14 @@ rules_neuropath_corr <- validator(
   !is.na(ci_upper),
   
   # ensembl_gene_id
-  is.character(ensembl_gene_id),
-  !is.na(ensembl_gene_id),
-  field_length(ensembl_gene_id, n=15),
+  is.character(ensg),
+  !is.na(ensg),
+  field_length(ensg, n=15),
   
   # hgnc_gene_id
-  is.character(hgnc_gene_id),
-  !is.na(hgnc_gene_id),
-  field_length(hgnc_gene_id, min=2, max=100),
+  is.character(gname),
+  !is.na(gname),
+  field_length(gname, min=0, max=100),
   
   
   # neuropath_type
@@ -31,15 +31,15 @@ rules_neuropath_corr <- validator(
   # pval
   is.numeric(pval),
   !is.na(pval),
-  pval > 0, # TODO 19 fails here, track them down? but we don't use this pval
+  pval > 0, # not used
   
   # pval_adj
   is.numeric(pval_adj),
   !is.na(pval_adj),
-  pval_adj > 0, # no fails here, we use this pval
+  pval_adj > 0, # used
   
   # multifield uniques
-  is_unique(ensembl_gene_id, neuropath_type),
-  is_unique(hgnc_gene_id, ensembl_gene_id, neuropath_type)
+  is_unique(ensg, neuropath_type),
+  is_unique(gname, ensg, neuropath_type)
   
 )

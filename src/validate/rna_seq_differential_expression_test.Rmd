@@ -12,7 +12,9 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 old_synId <-  "syn12177499" 
-new_synId <-  "syn26868926"
+# new_synId <-  "syn26868926" # test_data_full
+new_synId <- "syn27408149" # test_data_release_1.0.0
+
 name <- "rna_seq_differential_expression"
 
 # not file-specific
@@ -46,95 +48,45 @@ source("~/repos/rstudio/agora-data-validation/src/rules/rules_rna_seq_differenti
 test(get(new_name), get(rules))
 ```
 
+***
+# Outstanding validation failures
+***
+
+* is_unique(model, tissue, ensembl_gene_id): 168 fails => these duplicates should not cause issues in the app
+
+* adj_p_val > 0: 32 fails - See AG-350
 
 ***
 # Validation failure investigations
 ***
 
-## info for MattC
+## model %in% models: 345027 fails
+
+models <- c("AD Diagnosis (males and females)", "AD Diagnosis x AOD (males and females)","AD Diagnosis x Sex (females only)", "AD Diagnosis x Sex (males only)") : 345027 fails
+
+* We are missing the "AD" from 3/4 model values -> AG-410
 
 ```{r}
-not0 <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$adj_p_val >0,]
-
-max_lfc <- max(rna_seq_differential_expression_new$logfc)
-min_lfc <- min(rna_seq_differential_expression_new$logfc)
-max_adjP <- max(rna_seq_differential_expression_new$adj_p_val)
-min_adjP <- min(not0$adj_p_val)
-
-cat("\nLFC \n  max: ", max_lfc, "\n  min: ", min_lfc, "\nadj_p_val \n  max: ", max_adjP, "\n  min: ", min_adjP)
-```
-```{r}
-
-clean <- rna_seq_differential_expression_old[!is.na(rna_seq_differential_expression_old$logfc),]
-
-max_lfc <- max(clean$logfc)
-min_lfc <- min(clean$logfc)
-max_adjP <- max(clean$adj_p_val)
-min_adjP <- min(clean$adj_p_val)
-
-cat("\nLFC \n  max: ", max_lfc, "\n  min: ", min_lfc, "\nadj_p_val \n  max: ", max_adjP, "\n  min: ", min_adjP)
-```
-
-
-## AG-369: 1092 extra entities came from where?
-
-TODO
-
-
-```{r}
-
-```
-```{r}
-sqldf('SELECT * from rna_seq_differential_expression_new where ensembl_gene_id ="ENSG00000000003" and tissue = "FP"')
-```
-
-```{r}
-sqldf('SELECT * from rna_seq_differential_expression_old where ensembl_gene_id ="ENSG00000000003" and tissue = "FP"')
-```
-
-
-## 	field_length(ensembl_gene_id, n = 15): 1 fail
-
-
-```{r}
-v <- validator(field_length(ensembl_gene_id, n = 15))
-cf <- confront(get(new_name), v)
-out <- values(cf)
-is_unique_fails <- get(new_name)[!out,]
-is_unique_fails
-```
-
-
-## field_length(hgnc_symbol, min = 2, max = 100): 40400 fails
-
-- All of these are due to missing hgnc
-- 2342 ENSGs / expect 4 per region for the 7 models so up to 28 dups per ENSG is expected
-- but some ENSG  have 56 dups
-=> dups appear identical, so generally harmless?
-
-```{r}
-v <- validator(field_length(hgnc_symbol, min = 2, max = 100))
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(model %in% c("AD Diagnosis (males and females)", "AD Diagnosis x AOD (males and females)","AD Diagnosis x Sex (females only)", "AD Diagnosis x Sex (males only)"))
 cf <- confront(rna_seq_differential_expression_new, v)
 out <- values(cf)
 is_unique_fails <- rna_seq_differential_expression_new[!out,]
-print(is_unique_fails[order(is_unique_fails$ensembl_gene_id, is_unique_fails$tissue, is_unique_fails$model),])
-dup_ensg <- as.data.frame(table(is_unique_fails$ensembl_gene_id))
-dup_ensg[order(-dup_ensg$Freq),]
-
+is_unique_fails
 ```
-
-Rows for the 56 dups case seem identical pairwise, so 28 uniques as expected
 
 ```{r}
-dups_56 <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$ensembl_gene_id == "ENSG00000229425",]
-dups_56[order(dups_56$tissue, dups_56$model),]
+unique(is_unique_fails[c("model")])
 ```
-
 
 
 ## is_unique(model, tissue, ensembl_gene_id): 168 fails
 
-- We have identical dups => harmless
+These fail because we have multiple hgncs mapped to the same ensg, e.g. MIR29A & MIR29B1 both map to ENSG00000226380
+-> belong to the same 'gene group' of microRNAs: https://www.genenames.org/data/genegroup/#!/group/1701
+
+Since we will do lookups by ensg, we could get either of the duplicate records.
+luckily, the duplicate records appear to be identical other than hgnc, so this should not be a problem
 
 
 ```{r}
@@ -146,12 +98,14 @@ is_unique_fails[order(is_unique_fails$ensembl_gene_id, is_unique_fails$tissue, i
 ```
 
 
-## 	adj_p_val > 0: 100 fails
+## 	adj_p_val > 0: 32 fails
 
 Analysis results  
-- The old data file had <2k of these  
 - The source data has only 18 NAs  
+- All fails map to "ENSG00000050628" or "ENSG00000127903"
+- All fails map to the MSSM (source) / MSBB (json) study
 - AG-350  
+
 
 ```{r}
 v <- validator(adj_p_val > 0)
@@ -160,6 +114,8 @@ out <- values(cf)
 is_unique_fails <- rna_seq_differential_expression_new[!out,]
 is_unique_fails[order(is_unique_fails$ensembl_gene_id, is_unique_fails$tissue),]
 ```
+-> all fails map to two ENSGs: ENSG00000050628, ENSG00000127903
+
 old file has more of these (>2k)
 
 ```{r}
@@ -171,12 +127,45 @@ Get the source file
 rna_seq_differential_expression_source <- download_file('syn14237651', rna_seq_differential_expression_source, type = 'tsv')
 ```
 
-look at a specific ENSG from the 100 fails:  
-ENSG00000003989 - we have a pvals in the source data   
+Compare source vs new rows for the two ENSGs
+- source file has 32 rows with no values of interest, all seem to belong to the MSSM study
+- new file has 32 rows with no values of interest, all seem to belong to the MSSB study
+
+```{r}
+rna_seq_differential_expression_source[is.na(rna_seq_differential_expression_source$adj.P.Val),]
+
+ensgs <- unique(is_unique_fails$ensembl_gene_id)
+source_rows <- rna_seq_differential_expression_source[rna_seq_differential_expression_source$ensembl_gene_id %in% ensgs,]
+
+diagnoses <- c("Diagnosis", "Diagnosis.AOD", "Diagnosis.Sex")
+source_f1 <- source_rows[source_rows$Comparison == "AD-CONTROL",]
+source_f2 <- source_f1[source_f1$Model %in% diagnoses, ]
+
+source_f2[order(source_f2$Tissue, source_f2$Model),]
+```
+```{r}
+ensgs <- unique(is_unique_fails$ensembl_gene_id)
+
+new_rows <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$ensembl_gene_id %in% ensgs,]
+new_rows[order(new_rows$tissue, new_rows$model),]
+```
+
+Do we have good data for other genes from that study?
+
+```{r}
+rna_seq_differential_expression_source[rna_seq_differential_expression_source$Study == 'MSSM',]
+```
+
+
+
+
+
+look at a specific ENSG from the fails:  
+ENSG00000050628 - we have a pvals in the source data   
 => where did they go during processing?  
 
 ```{r}
-ensg1 <- rna_seq_differential_expression_source[rna_seq_differential_expression_source$ensembl_gene_id == 'ENSG00000003989',]
+ensg1 <- rna_seq_differential_expression_source[rna_seq_differential_expression_source$ensembl_gene_id == 'ENSG00000050628',]
 ensg1_filtered <- ensg1[ensg1$Tissue == 'TCX',]
 print(ensg1_filtered)
 
@@ -247,4 +236,59 @@ reverse_diff <-rna_seq_differential_expression_new[rna_seq_differential_expressi
 print(reverse_diff[order(reverse_diff$ensembl_gene_id, reverse_diff$tissue, reverse_diff$hgnc_symbol),]) # in source not new
 ```
 
+## field_length(hgnc_symbol, min = 2, max = 100): 40400 fails
 
+- All of these are due to missing hgnc
+- 2342 ENSGs / expect 4 per region for the 7 models so up to 28 dups per ENSG is expected
+- but one ENSG has 56
+=> dups appear identical, so generally harmless
+
+Resolution: Relax rule
+
+```{r}
+v <- validator(field_length(hgnc_symbol, min = 2, max = 100))
+cf <- confront(rna_seq_differential_expression_new, v)
+out <- values(cf)
+is_unique_fails <- rna_seq_differential_expression_new[!out,]
+print(is_unique_fails[order(is_unique_fails$ensembl_gene_id, is_unique_fails$tissue, is_unique_fails$model),])
+dup_ensg <- as.data.frame(table(is_unique_fails$ensembl_gene_id))
+dup_ensg[order(-dup_ensg$Freq),]
+
+```
+
+Rows for the 56 dups case seem identical pairwise, so 28 uniques as expected
+
+```{r}
+dups_56 <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$ensembl_gene_id == "ENSG00000229425",]
+dups_56[order(dups_56$tissue, dups_56$model),]
+```
+
+
+
+***
+# Other Validation
+***
+
+## info for MattC
+
+```{r}
+not0 <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$adj_p_val >0,]
+
+max_lfc <- max(rna_seq_differential_expression_new$logfc)
+min_lfc <- min(rna_seq_differential_expression_new$logfc)
+max_adjP <- max(rna_seq_differential_expression_new$adj_p_val)
+min_adjP <- min(not0$adj_p_val)
+
+cat("\nLFC \n  max: ", max_lfc, "\n  min: ", min_lfc, "\nadj_p_val \n  max: ", max_adjP, "\n  min: ", min_adjP)
+```
+```{r}
+
+clean <- rna_seq_differential_expression_old[!is.na(rna_seq_differential_expression_old$logfc),]
+
+max_lfc <- max(clean$logfc)
+min_lfc <- min(clean$logfc)
+max_adjP <- max(clean$adj_p_val)
+min_adjP <- min(clean$adj_p_val)
+
+cat("\nLFC \n  max: ", max_lfc, "\n  min: ", min_lfc, "\nadj_p_val \n  max: ", max_adjP, "\n  min: ", min_adjP)
+```

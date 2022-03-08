@@ -26,7 +26,7 @@ rules_gene_info_nominated_target <-  validator(
   is.character(input_data),
   
   # predicted_therapeutic_direction
-  is.character(team),
+  is.character(predicted_therapeutic_direction),
   
   # rank - is this used?
   is.character(rank), 
@@ -35,10 +35,10 @@ rules_gene_info_nominated_target <-  validator(
   source %in% c("Community", "AMP-AD", "Resilience-AD", "TREAT-AD"),
   
   # study
-  is.character(team),
+  is.character(study),
   
   # target_choice_justification
-  is.character(team),
+  is.character(target_choice_justification),
   
   # team
   is.character(team),

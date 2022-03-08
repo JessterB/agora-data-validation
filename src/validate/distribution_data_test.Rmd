@@ -13,7 +13,8 @@ prepare()
 # add file-specific values here
 name <- "distribution_data"
 old_synId <-  "syn26274945" 
-new_synId <-  "syn27079789"
+# new_synId <-  "syn27079789" # test_data_full
+new_synId <- "syn27406301" # test_data_release_1.0.0
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")
@@ -48,15 +49,41 @@ test(get(new_name), get(rules))
 
 
 ***
+# Outstanding validation failures
+***
+N/A
+
+***
 # Validation failure investigations
 ***
 
-
-```{r}
+```{r echo=FALSE}
 # yields a dataframe containing the failure cases for a specific rule
 v <- validator(VALIDATION_RULE)
 cf <- confront(DATAFRAME, v)
 out <- values(cf)
 is_unique_fails <- DATAFRAME[!out,]
 is_unique_fails
+```
+
+***
+# Other validation
+***
+
+## Distribution validation
+
+Ensure that no scores were dropped by validating that the distributions contain the expected total number of genes
+
+```{r echo=FALSE}
+cat("\nOverall distribution total genes: ", sum(distribution_data_new$Logsdon.distribution))
+cat("\nOverall total genes expected: ", "24659")
+
+cat("\n\nGenomics distribution total genes: ", sum(distribution_data_new$OmicsScore.distribution))
+cat("\nGenomics total genes expected: ", "23876")
+
+cat("\n\nLiterature distribution total genes: ", sum(distribution_data_new$LiteratureScore.distribution))
+cat("\nLiterature total genes expected: ", "15656")
+
+cat("\n\nGenetics distribution total genes: ", sum(distribution_data_new$GeneticsScore.distribution))
+cat("\nGenetics total genes expected: ", "23319")
 ```
