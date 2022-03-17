@@ -55,7 +55,7 @@ source("~/repos/rstudio/agora-data-validation/src/utils.R")
 compare_subobjects(get(old_name), get(new_name), "druggability")
 ```
 
-### nominated_target
+### nominatedtarget
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 compare_subobjects(get(old_name), get(new_name), "nominatedtarget", "nominatedtarget")
@@ -126,8 +126,8 @@ Analysis:
 
 
 ```{r}
-subobj <- get_subobject(gene_info_new, "nominated_target")
-v <- validator(	field_length(data_used_to_support_target_selection, min = 15, max = 2000))
+subobj <- get_subobject(gene_info_new, "nominatedtarget")
+v <- validator(field_length(data_used_to_support_target_selection, min = 15, max = 2000))
 cf <- confront(subobj, v)
 out <- values(cf)
 is_unique_fails <- subobj[!out,]
@@ -135,6 +135,7 @@ is_unique_fails
 ```
 
 Are there values in the source data?
+=> nope
 
 ```{r}
 nominated_target_source <- download_file("syn12540368", type = "csv")
@@ -142,44 +143,6 @@ nominated_target_source <- download_file("syn12540368", type = "csv")
 
 ```{r}
 nominated_target_source[nominated_target_source$hgnc_symbol %in% c("REST", "HDAC1"),]
-```
-
-
-## uniques
-- 21,293 non-unique hgncs
-- 1,282 of these aren't blank strings -> mostly small rnas
-
-```{r}
-v <- validator(is_unique(hgnc_symbol))
-cf <- confront(gene_info_new, v)
-out <- values(cf)
-
-is_unique_fails <- gene_info_new[!out,]
-dup_hgnc_fails <- is_unique_fails[is_unique_fails$hgnc_symbol != "",]
-sorted_dups <- dup_hgnc_fails[order(dup_hgnc_fails$hgnc_symbol),]
-
-print(is_unique_fails)
-print(sorted_dups)
-```
-
-
-## field_length(hgnc_symbol, min = 2, max = 100): 20011 fails
-- blank hgnc
-- blank name
-
-Resolution: Relax the rules for both hgnc and name
-
-```{r}
-v <- validator(field_length(hgnc_symbol, min = 2, max = 100))
-cf <- confront(gene_info_new, v)
-out <- values(cf)
-is_unique_fails <- gene_info_new[!out,]
-is_unique_fails
-```
-
-
-```{r}
-gene_info_old[gene_info_old$ensembl_gene_id %in% c("ENSG00000069712","ENSG00000083622","ENSG00000093100","ENSG00000100101","ENSG00000103200"),]
 ```
 
 
@@ -373,4 +336,15 @@ old_ensgs <- gene_info_old$ensembl_gene_id
 new_ensgs <- gene_info_new$ensembl_gene_id
 
 setdiff(new_ensgs, old_ensgs)
+```
+
+
+```{r}
+nominations <- get_subobject(gene_info_old, "nominatedtarget")
+synIds <- nominations$data_synapseid
+
+print(synIds)
+
+
+}
 ```

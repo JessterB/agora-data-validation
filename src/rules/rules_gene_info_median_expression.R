@@ -7,7 +7,7 @@ rules_gene_info_median_expression <- validator(
   
   # tissue
   is.character(tissue),
-  tissue %in% c("CBE", "DLPFC", "FP", "IFG", "PHG", "STG", "TCX"),
+  tissue %in% c("CBE", "DLPFC", "FP", "IFG", "PHG", "STG", "TCX", "ACC", "PCC"),
   !is.na(tissue),
   
   # multi-field uniques

@@ -1,0 +1,95 @@
+---
+title: "REPLACEME.json"
+output: html_notebook
+---
+
+```{r eval=FALSE, echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+prepare()
+```
+
+# Validation run metadata
+```{r echo=FALSE}
+# add file-specific values here
+name <- "REPLACEME"
+old_synId <-  "REPLACEME" 
+new_synId <-  "REPLACEME"
+
+# not file-specific
+old_name <- paste(name, "old", sep="_")
+new_name <- paste(name, "new", sep="_")
+rules <- paste0("rules_", name)
+
+# print validation summary
+cat( name, ".json", "\n", date(),
+    "\nold: ", old_synId, " \nnew: ", new_synId,
+    sep="")
+```
+
+# Downloaded files
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+download_files(old_synId, new_synId, name)
+```
+
+# Compared old & new files
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+# compare(get(old_name), get(new_name), name, summarize=FALSE)# TODO uncomment once we update this file
+```
+
+
+
+# TEMP get the only version of the file, since it's brand new & there's nothing to compare it to
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+rna_distribution_data_new <- download_file("syn27761702", "rna_distribution_data")
+new_name <- "rna_distribution_data_new"
+rules <- paste0("rules_", "rna_distribution_data")
+```
+
+# Validated new file against rules
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_rna_distribution_data.R")
+test(get(new_name), get(rules))
+```
+
+
+***
+# Validation failure investigations
+***
+
+
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(VALIDATION_RULE)
+cf <- confront(DATAFRAME, v)
+out <- values(cf)
+is_unique_fails <- DATAFRAME[!out,]
+is_unique_fails
+```
+
+Initial distribution verification
+
+```{r}
+tissues <- unique(rna_seq_differential_expression_new$tissue)
+models <- unique(rna_seq_differential_expression_new$model)
+
+for (tissue in tissues) {
+  for (model in models) {
+    tissue_rows <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$tissue == tissue,]
+    tissue_model_rows <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$model == model,]
+    tissue_model_lfc <- tissue_model_rows$logfc
+    mean <- mean(tissue_model_lfc)
+    median <- median(tissue_model_lfc)
+    quartiles <- quantile(tissue_model_lfc)
+    
+    dist_tissue <- rna_distribution_data_new[rna_distribution_data_new$tissue == tissue,]
+    dist_tissue_model <- dist_tissue[dist_tissue$model == model,]
+    
+    cat("\n\nTissue:", tissue, "\nModel:", model, "\nCalculated Median", median, "\nFile Median", dist_tissue_model$median, "\n diff", median - dist_tissue_model$median)
+    
+  }
+}
+```

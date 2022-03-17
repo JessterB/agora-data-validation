@@ -1,5 +1,5 @@
 ---
-title: "REPLACEME.json"
+title: "misc investigations"
 output: html_notebook
 ---
 
@@ -9,10 +9,46 @@ prepare()
 ```
 
 ```{r}
-stats_file <- download_file("syn27211878", "stats_file", "csv")
-median_file <- download_file("syn12514804", "median_file", "csv")
-
+#stats_file <- download_file("syn27211878", "stats_file", "csv")
+#median_file <- download_file("syn12514804", "median_file", "csv")
+harmonized_targets <- download_file("syn12540368", "harmonized_targets_file", "csv")
 ```
+
+
+
+how many genes will pull names from RNA DE results instead of geneInfo?
+=> 1128
+
+
+
+```{r}
+blank_hgnc <- gene_info_new[gene_info_new$hgnc_symbol == '',]
+ensgs <- blank_hgnc$ensembl_gene_id
+rna_seqs <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$ensembl_gene_id %in% ensgs,]
+hgnc <- rna_seqs[!rna_seqs$hgnc_symbol == '',]
+unique_hgnc <- unique(hgnc$ensembl_gene_id)
+print(hgnc[order(hgnc$hgnc_symbol),])
+print(unique_hgnc)
+```
+```{r}
+hgnc[hgnc$ensembl_gene_id == 'ENSG00000273036',]
+```
+
+
+Total expected nominations 
+```{r}
+unique(harmonized_targets$hgnc_symbol)
+length(unique(harmonized_targets$hgnc_symbol))
+```
+
+Two new nominations
+```{r}
+ngfr <- harmonized_targets[harmonized_targets$hgnc_symbol == "NGFR",]
+nectin2 <- harmonized_targets[harmonized_targets$hgnc_symbol == "NECTIN2",]
+print(ngfr)
+print(nectin2)
+```
+
 
 ```{r}
 # find 10 genes that are in both files

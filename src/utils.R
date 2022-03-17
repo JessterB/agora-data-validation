@@ -53,13 +53,21 @@ download_file <- function(synId, df_name, type = 'json', quiet = TRUE) {
   if(!quiet) {
     cat(paste0("Downloading ", synId, "..."))
   }
+  
+  id_parts <- strsplit(synId, '.', fixed = TRUE)
+  
+  version_value <- id_parts[[1]][2]
+  
+  if (is.na(version_value)) {
+    version_value <- NULL
+  } 
 
   if (type == 'table') { 
-    sel_statement <- paste("SELECT * FROM", synId, collapse=" ")
+    sel_statement <- paste("SELECT * FROM", id_parts[[1]][1], version = version_value, collapse=" ")
     file <- synTableQuery(sel_statement, resultsAs='csv')
     path <- file$filepath
   } else {
-    file <- synGet(synId, downloadLocation = "files/")
+    file <- synGet(id_parts[[1]][1], version = version_value, downloadLocation = "files/")
     path <- file$path
   }
 

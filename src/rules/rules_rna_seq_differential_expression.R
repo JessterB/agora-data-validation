@@ -37,7 +37,7 @@ rules_rna_seq_differential_expression <- validator(
   
   # tissue
   is.character(tissue),
-  tissue %in% c("CBE", "DLPFC", "FP", "IFG", "PHG", "STG", "TCX"),
+  tissue %in% c("CBE", "DLPFC", "FP", "IFG", "PHG", "STG", "TCX", "ACC", "PCC"),
   
   # multifield uniques
   is_unique(model, tissue, ensembl_gene_id)
