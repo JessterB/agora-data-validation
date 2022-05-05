@@ -10,12 +10,16 @@ prepare <- function() {
     if (!require("sqldf")) { install.packages("sqldf") }
     if (!require("validate")) { install.packages("validate") }
     if (!require("arrow")) { install.packages("arrow") } 
+    if (!require("assertr")) { install.packages("assertr") } 
+    if (!require("assertr")) { install.packages("dplyr") }
     library(synapser)
     library(jsonlite)
     library(tidyverse)
     library(sqldf)
     library(validate)
     library(arrow)
+    library(assertr)
+    library(dplyr)
     synLogin()
   }
 

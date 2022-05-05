@@ -13,8 +13,7 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 old_synId <-  "syn12523173" 
-# new_synId <-  "syn26868935" # test_data_full
-new_synId <- "syn27408190" # test_data_release_1.0.0
+new_synId <- "syn17015361"
 
 name <- "network"
 
@@ -55,12 +54,14 @@ test(get(new_name), get(rules))
 These are due to blank string hgnc_symbols, see AG-345:
 
 * field_length(geneA_external_gene_name, min = 2, max = 100): 318 fails
+-- The increase here is due to a single gene's name changing from "INA" to "I" in the latest processing for some reason (bioconductor??)
 
-* field_length(geneB_external_gene_name, min = 2, max = 100): 216 fails
+* field_length(geneB_external_gene_name, min = 2, max = 100): 216 fails 
+-- increase due to "INA" => "I" as above
 
 These are all records with the same geneB, see AG-346:
-
 * is_unique(brainRegion, geneA_ensembl_gene_id, geneB_ensembl_gene_id): 144 fails
+
 
 ***
 # Validation failure investigations
@@ -101,7 +102,7 @@ is_unique_fails[is_unique_fails$geneB_external_gene_name == 'AJ009632.2',]
 
 
 ## field_length(genea_external_gene_name, min = 2, max = 100)
-318 fails
+318 fails -> 373 fails
 
 Analysis results:  
 - all 318 fails are due to blank strings  
@@ -110,17 +111,40 @@ Analysis results:
 - All missing hgncs are also missing in gene_info
 => same as AG-334
 
+The new fails all have geneA_external_gene_name == 'I'
+
 
 
 Failing cases:
 
 ```{r}
-network_new[network_new$genea_external_gene_name == "", ]
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(field_length(geneA_external_gene_name, min = 2, max = 100))
+cf <- confront(network_new, v)
+out <- values(cf)
+is_unique_fails <- network_new[!out,]
+is_unique_fails
+```
+318/373 are to blank string hgnc values
+
+```{r}
+network_new[network_new$geneA_external_gene_name == "", ]
+```
+
+The rest have a == "I" for some reason
+
+per hgnc/ensg, ENSG00000148798 should be named "INA" (https://www.genenames.org/tools/search/#!/?query=ENSG00000148798)
+
+```{r}
+network_new[network_new$geneA_external_gene_name == "I", ]
+network_old[network_old$geneA_ensembl_gene_id == "ENSG00000148798", ]
 ```
 
 
 
-Do we see this in the old file? -> no
+
+
+Do we see this in the old file? -> no [note old was pre-python pipelines in this case]
 
 ```{r}
 network_old[network_old$geneA_external_gene_name == "", ]
@@ -150,13 +174,26 @@ Analysis results:
 - the old data file did not have any of these  
 - Filed AG-345 for tracking (combined with previous issue)  
 
+Failing cases:
+
 ```{r}
-network_new[network_new$geneb_external_gene_name == "", ]
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(field_length(geneB_external_gene_name, min = 2, max = 100))
+cf <- confront(network_new, v)
+out <- values(cf)
+is_unique_fails <- network_new[!out,]
+is_unique_fails
 ```
 
+```{r}
+network_new[network_new$geneB_external_gene_name == "", ]
+```
 
+```{r}
+network_new[network_new$geneB_external_gene_name == "I", ]
+```
 
-- Do we see this in the old file? -> no
+- Do we see this in the old (pre-refactor) file? -> no
 ```{r}
 network_old[network_old$geneB_external_gene_name == "", ]
 ```

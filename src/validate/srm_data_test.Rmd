@@ -1,9 +1,6 @@
 ---
-title: "team_info_test"
+title: "srm_data.json"
 output: html_notebook
-knit: (function(inputFile, encoding) {
-    rmarkdown::render(inputFile, encoding = encoding, output_dir = "~/Pictures")
-  })
 ---
 
 ```{r eval=FALSE, echo=FALSE}
@@ -13,11 +10,10 @@ prepare()
 
 # Validation run metadata
 ```{r echo=FALSE}
-# file-specific
-old_synId <-  "syn12616884" 
-new_synId <- "syn17015358" 
-
-name <- "team_info"
+# add file-specific values here
+name <- "srm_data"
+old_synId <-  "syn25741026" 
+new_synId <-  "syn25740977"
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")
@@ -46,14 +42,10 @@ compare(get(old_name), get(new_name), name, summarize=FALSE)
 # Validated new file against rules
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-source("~/repos/rstudio/agora-data-validation/src/rules/rules_team_info.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_REPLACEME.R")
 test(get(new_name), get(rules))
 ```
 
-***
-# Outstanding validation failures
-***
-N/A
 
 ***
 # Validation failure investigations
@@ -62,21 +54,14 @@ N/A
 
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule
-v <- validator(RULE)
-cf <- confront(team_info_new, v)
+v <- validator(VALIDATION_RULE)
+cf <- confront(DATAFRAME, v)
 out <- values(cf)
-is_unique_fails <- team_info_new[!out,]
+is_unique_fails <- DATAFRAME[!out,]
 is_unique_fails
 ```
 
-***
-# Other validation
-***
 
-2 new teams
 ```{r}
-teams <- team_info_old$team
-
-team_info_new[!team_info_new$team %in% teams,]
-
+srm <- download_file("syn25454540", type='csv')
 ```

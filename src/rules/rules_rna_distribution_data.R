@@ -7,7 +7,7 @@ rules_rna_distribution_data <- validator(
   
   # tissue
   is.character(tissue),
-  tissue %in% c("CBE", "DLPFC", "FP", "IFG", "PHG", "STG", "TCX"),
+  tissue %in% c("CBE", "DLPFC", "FP", "IFG", "PHG", "STG", "TCX", "ACC", "PCC"),
   
   # min
   is.numeric(min),
@@ -28,6 +28,8 @@ rules_rna_distribution_data <- validator(
   max > third_quartile,
   third_quartile > median,
   median > first_quartile,
-  first_quartile > min
+  first_quartile > min,
+  all.equal(max, third_quartile + ((third_quartile - first_quartile) * 1.5)),
+  all.equal(min, first_quartile - ((third_quartile - first_quartile) * 1.5))
   
 )

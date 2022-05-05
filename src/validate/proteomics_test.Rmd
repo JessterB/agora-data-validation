@@ -11,9 +11,9 @@ prepare()
 # Validation run metadata
 ```{r echo=FALSE}
 # file-specific
+source_synId <- "syn18689335" # csv
 old_synId <-  "syn18693175" 
-# new_synId <-  "syn26868914" # test_data_full
-new_synId <- "syn27407745" # test_data_release_1.0.0
+new_synId <- "syn18691125"  
 
 name <- "proteomics"
 
@@ -68,6 +68,27 @@ cf <- confront(proteomics_new, v)
 out <- values(cf)
 is_unique_fails <- proteomics_new[!out,]
 is_unique_fails
+```
+
+
+
+# field_format(uniprotid, "[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}", type = "regex"): 24 fails
+
+We are stripping 'NA' out of uniprotId for some reason!
+
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(field_format(uniprotid, "[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}", type = "regex"))
+cf <- confront(proteomics_new, v)
+out <- values(cf)
+is_unique_fails <- proteomics_new[!out,]
+is_unique_fails
+```
+
+
+```{r}
+ensgs <- is_unique_fails$ensembl_gene_id
+proteomics_old[proteomics_old$ensembl_gene_id %in% ensgs,]
 ```
 
 
@@ -280,4 +301,42 @@ proteomics_source[proteomics_source$ENSG == "ENSG00000166548",]
 
 ```{r}
 proteomics_source[proteomics_source$ENSG == "ENSG00000172867",]
+```
+
+
+
+```{r}
+f <- proteomics_source[is.na(proteomics_source$Log2_FC),]
+p <- proteomics_source[is.na(proteomics_source$Cor_PVal),]
+u <- proteomics_source[is.na(proteomics_source$CI_Upr),]
+l <- proteomics_source[is.na(proteomics_source$CI_Lwr),]
+
+fe <- f$ENSG
+pe <- p$ENSG
+ue <- u$ENSG
+le <- l$ENSG
+
+
+
+setdiff(fe, pe)
+setdiff(fe, ue)
+setdiff(fe, le)
+```
+
+
+
+```{r}
+sum(is.na(proteomics_source$Cor_PVal))
+```
+
+```{r}
+sum(is.na(proteomics_source$Log2_FC))
+```
+
+```{r}
+sum(is.na(proteomics_source$CI_Upr))
+```
+
+```{r}
+sum(is.na(proteomics_source$CI_Lwr))
 ```

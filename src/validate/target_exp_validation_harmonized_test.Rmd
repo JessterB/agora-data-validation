@@ -13,8 +13,7 @@ prepare()
 # file-specific
 name <- "target_exp_validation_harmonized"
 old_synId <-  "syn25741027" 
-#new_synId <-  "syn26868915" # test_data_full
-new_synId <- "syn27407750" # test_data_release_1.0.0
+new_synId <- "syn25740978"  
 
 
 # not file-specific
@@ -54,9 +53,23 @@ test(get(new_name), get(rules))
 
 * field_length(ensembl_gene_id, n = 15): 1 fail - See AG-351
 
+* field_format(reference_doi, "^$|^https?://doi.org/.*$", type = "regex"): 103 fails [changed from "" to null via AG-474]
+
 ***
 # Validation failure investigations
 ***
+
+
+## field_format(reference_doi, "^$|^https?://doi.org/.*$", type = "regex")
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(field_format(reference_doi, "^$|^https?://doi.org/.*$", type = "regex"))
+cf <- confront(target_exp_validation_harmonized_new, v)
+out <- values(cf)
+is_unique_fails <- target_exp_validation_harmonized_new[!out,]
+is_unique_fails
+```
+
 
 ## 	AG-351: field_length(ensembl_gene_id, n = 15): 1 fail
 

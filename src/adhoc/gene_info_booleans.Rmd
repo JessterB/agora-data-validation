@@ -1,0 +1,89 @@
+---
+title: "gene_info boolean validation"
+output: html_notebook
+---
+
+## proteomics
+
+shared data
+
+```{r}
+prot <- proteomics_new$ensembl_gene_id
+gene_info <- gene_info_new$ensembl_gene_id
+prot_mins <- proteomics_new %>% group_by(ensembl_gene_id) %>% arrange(cor_pval) %>% slice(1)
+```
+
+
+1. verify that genes that have no proteomics records are all 'studied == FALSE'
+```{r}
+prot_not_studied <- setdiff(gene_info, prot) # these should have studied == false
+info_prot_not_studied <- gene_info_new[gene_info_new$ensembl_gene_id %in% prot_not_studied,]
+info_prot_not_studied[info_prot_not_studied$protein_brain_change_studied == TRUE,] # expect empty
+```
+
+2. verify that genes that have proteomics records are all 'studied == TRUE'
+```{r}
+prot_studied <- intersect(gene_info, prot) # these should have studied == true
+info_prot_studied <- gene_info_new[gene_info_new$ensembl_gene_id %in% prot_studied,]
+info_prot_studied[info_prot_studied$protein_brain_change_studied == FALSE,] # expect empty
+```
+
+3. verify that genes with min proteomics cor_pval > 0.05 have 'changed == FALSE'
+```{r}
+prot_not_changed <- prot_mins[prot_mins$cor_pval > 0.05,]
+prot_not_changed_ensgs <- prot_not_changed$ensembl_gene_id
+info_prot_not_changed <- gene_info_new[gene_info_new$ensembl_gene_id %in% prot_not_changed_ensgs,]
+info_prot_not_changed[info_prot_not_changed$isAnyProteinChangedInADBrain == TRUE,] # expect empty
+```
+
+
+4. verify that genes with min proteomics cor_pval <= 0.05 have 'changed == TRUE'
+```{r}
+prot_changed <- prot_mins[prot_mins$cor_pval <= 0.05,]
+prot_changed_ensgs <- prot_changed$ensembl_gene_id
+info_prot_changed <- gene_info_new[gene_info_new$ensembl_gene_id %in% prot_changed_ensgs,]
+info_prot_changed[info_prot_changed$isAnyProteinChangedInADBrain == FALSE,] # expect empty
+```
+
+
+## RNA
+
+shared data
+
+```{r}
+rna <- rna_seq_differential_expression_new$ensembl_gene_id
+gene_info <- gene_info_new$ensembl_gene_id
+rna_mins <- rna_seq_differential_expression_new %>% group_by(ensembl_gene_id) %>% arrange(adj_p_val) %>% slice(1)
+```
+
+
+1. verify that genes that have no rnaseq records are all 'studied == FALSE'
+```{r}
+rna_not_studied <- setdiff(gene_info, rna) # these should have studied == false
+info_rna_not_studied <- gene_info_new[gene_info_new$ensembl_gene_id %in% rna_not_studied,]
+info_rna_not_studied[info_rna_not_studied$rna_brain_change_studied == TRUE,] # expect empty
+```
+
+2. verify that genes that have rnaseq records are all 'studied == TRUE'
+```{r}
+rna_studied <- intersect(gene_info, rna) # these should have studied == true
+info_rna_studied <- gene_info_new[gene_info_new$ensembl_gene_id %in% rna_studied,]
+info_rna_studied[info_rna_studied$rna_brain_change_studied == FALSE,] # expect empty
+```
+
+3. verify that genes with min rna adj_p_val > 0.05 have 'changed == FALSE'
+```{r}
+rna_not_changed <- rna_mins[rna_mins$adj_p_val > 0.05,]
+rna_not_changed_ensgs <- rna_not_changed$ensembl_gene_id
+info_rna_not_changed <- gene_info_new[gene_info_new$ensembl_gene_id %in% rna_not_changed_ensgs,]
+info_rna_not_changed[info_rna_not_changed$isAnyRNAChangedInADBrain == TRUE,] # expect empty
+```
+
+
+4. verify that genes with min proteomics cor_pval <= 0.05 have 'changed == TRUE'
+```{r}
+rna_changed <- rna_mins[rna_mins$adj_p_val <= 0.05,]
+rna_changed_ensgs <- rna_changed$ensembl_gene_id
+info_rna_changed <- gene_info_new[gene_info_new$ensembl_gene_id %in% rna_changed_ensgs,]
+info_rna_changed[info_rna_changed$isAnyRNAChangedInADBrain == FALSE,] # expect empty
+```

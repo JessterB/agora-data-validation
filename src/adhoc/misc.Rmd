@@ -8,6 +8,94 @@ source("~/repos/rstudio/agora-data-validation/src/utils.R")
 prepare()
 ```
 
+
+
+## missing nominated target fields
+```{r}
+nominations_source <- download_file("syn12540368", type="csv")
+```
+
+
+```{r}
+rest <- nominations_source[nominations_source$ensembl_gene_id == 'ENSG00000084093',]
+```
+
+```{r}
+cols <- colnames(nominations_source)
+
+# no empty strings
+nominations_source[nominations_source$Source == "",]
+nominations_source[nominations_source$Team == "",]
+nominations_source[nominations_source$Rank == "",]
+nominations_source[nominations_source$ensembl_gene_id == "",]
+nominations_source[nominations_source$hgnc_symbol == "",]
+nominations_source[nominations_source$Target_Choice_Justification == "",]
+nominations_source[nominations_source$Predicted_Therapeutic_Direction == "",]
+nominations_source[nominations_source$input_data == "",] 
+nominations_source[nominations_source$initial_nomination == "",]
+
+
+# empty strings
+nominations_source[nominations_source$Data_used_to_support_target_selection == "",] # REST, HDAC1
+nominations_source[nominations_source$data_synapseID == "",] # REST, HDAC1, NECTIN2, NGFR
+nominations_source[nominations_source$study == "",]  # REST, HDAC1
+nominations_source[nominations_source$Validation.study.details == "",] # 104 genes
+
+
+
+
+
+```
+
+
+
+
+## TMT proteomics source investigation
+```{r}
+proteomics_source <- download_file("syn18689335", type = "csv")
+```
+
+
+```{r}
+tmt_source <- download_file("syn21266454", type = "csv")
+```
+
+```{r}
+colnames(tmt_source)
+```
+
+
+
+genes with no ME but have DE?
+
+```{r}
+t3 <- gene_info_new[gene_info_new$hgnc_symbol == 'TUBAL3',]
+
+gene_info_new[gene_info_new$medianexpression == NULL,]
+```
+
+
+
+
+genes with no RNA but Prot?
+
+
+genes with no RNA but Metab?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ```{r}
 #stats_file <- download_file("syn27211878", "stats_file", "csv")
 #median_file <- download_file("syn12514804", "median_file", "csv")

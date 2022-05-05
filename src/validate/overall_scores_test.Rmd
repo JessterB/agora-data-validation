@@ -12,8 +12,7 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 old_synId <-  "syn25741025" 
-# new_synId <-  "syn26868918" # test_data_full
-new_synId <-  "syn27407784" # test_data_release_1.0.0
+new_synId <-  "syn25740976" 
 
 name <- "overall_scores"
 

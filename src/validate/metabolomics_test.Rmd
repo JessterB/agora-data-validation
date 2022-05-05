@@ -12,8 +12,7 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 old_synId <-  "syn19315964" 
-# new_synId <-  "syn26868927" # test_data_full
-new_synId <- "syn27408161" # test_data_release_1.0.0
+new_synId <- "syn19276330" 
 
 name <- "metabolomics"
 
@@ -60,7 +59,15 @@ Spot checking of the source data indicates that these duplicates are not created
 
 ***
 # Validation failure investigations
-***
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(VALIDATION_RULE)
+cf <- confront(DATAFRAME, v)
+out <- values(cf)
+is_unique_fails <- DATAFRAME[!out,]
+is_unique_fails
+```
+
 
 ## is_unique(associated_gene_name): 438 fails
 
@@ -68,9 +75,21 @@ Analysis results:
 - duplicate hgnc look similar to those identified in AG-333, fwiw...  
 - source data contains dups with disjointed pvalues too  
 
+
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(is_unique(associated_gene_name))
+cf <- confront(metabolomics_new, v)
+out <- values(cf)
+is_unique_fails <- metabolomics_new[!out,]
+is_unique_fails[order(is_unique_fails$associated_gene_name),]
+```
+
+
 ```{r}
 counts <- as.data.frame(table(metabolomics_new$associated_gene_name))
-counts[order(counts$Freq, decreasing = TRUE),]
+dups <- counts[counts$Freq > 1,]
+dups[order(dups$Freq, decreasing = TRUE),]
 
 ```
 

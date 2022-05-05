@@ -12,8 +12,7 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 old_synId <-  "syn12548902" 
-# new_synId <-  "syn26868959" # test_data_full
-new_synId <- "syn27407632" # test_data_release_1.0.0
+new_synId <- "syn17015359" 
 
 name <- "gene_info"
 
@@ -102,7 +101,7 @@ test_subobject(get(new_name), "medianexpression", get(subrules))
 # Outstanding validation failures
 ***
 * nominated target: field_length(data_used_to_support_target_selection, min = 15, max = 2000): 2 fails - see AG-365
-
+* !is.na(summary): 5 fails 
 
 ***
 # Validation failure investigations
@@ -116,6 +115,96 @@ is_unique_fails
 ```
 
 
+##  !is.na(summary): 5 fails
+-> !is.na(summary): 42406 fails - spot check shows these were blank strings last time, nulls now seems fine
+
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(!is.na(summary))
+cf <- confront(gene_info_new, v)
+out <- values(cf)
+is_unique_fails <- gene_info_new[!out,]
+is_unique_fails
+```
+```{r}
+gene_info_old[gene_info_old$ensembl_gene_id == "ENSG00000002933",]
+```
+
+
+## AG-474: proteomics booleans
+
+
+```{r}
+gene_info_new[gene_info_new$ensembl_gene_id == "ENSG00000142892" ,]
+proteomics_new[proteomics_new$ensembl_gene_id == "ENSG00000142892" ,]
+```
+
+```{r}
+gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000142892',]
+
+```
+
+
+spot checks
+```{r}
+prot_mins <- proteomics_new %>% group_by(ensembl_gene_id) %>% arrange(cor_pval) %>% slice(1)
+prot_mins
+```
+
+```{r}
+gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000008018',]
+```
+
+```{r}
+prot <- proteomics_new$ensembl_gene_id
+gene_info <- gene_info_new$ensembl_gene_id
+
+setdiff(gene_info, prot) # these should have studied == false
+
+```
+
+```{r}
+gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000078618',]
+```
+
+## AG-530: RNA booleans
+```{r}
+gene_info_new[gene_info_new$ensembl_gene_id == "ENSG00000233009" ,]
+rna_seq_differential_expression_new[rna_seq_differential_expression_new$ensembl_gene_id == "ENSG00000233009" ,]
+```
+
+```{r}
+gene_info_new[gene_info_new$ensembl_gene_id == "ENSG00000200882" ,]
+rna_seq_differential_expression_new[rna_seq_differential_expression_new$ensembl_gene_id == "ENSG00000200882" ,]
+```
+
+
+
+```{r}
+mins <- rna_seq_differential_expression_new %>% group_by(ensembl_gene_id) %>% arrange(adj_p_val) %>% slice(1)
+mins
+```
+
+```{r}
+studied <- rna_seq_differential_expression_new$ensembl_gene_id
+gene_info <- gene_info_new$ensembl_gene_id
+
+setdiff(gene_info, studied)  # these should have studied == false
+
+```
+
+```{r}
+gene_info_new[gene_info_new$ensembl_gene_id == "ENSG00000144158" ,]
+```
+
+
+## The missing NA (AG-368) 
+
+```{r}
+gene_info_new[gene_info_new$hgnc_symbol == 'DNAH9',]
+gene_info_new[gene_info_new$hgnc_symbol == 'DH9',]
+gene_info_old[gene_info_old$hgnc_symbol == 'DNAH9',]
+```
 
 ## AG-365 field_length(data_used_to_support_target_selection, min = 1, max = 2000): 2 fails
 
@@ -344,7 +433,14 @@ nominations <- get_subobject(gene_info_old, "nominatedtarget")
 synIds <- nominations$data_synapseid
 
 print(synIds)
+```
 
 
-}
+```{r}
+not_studied <- gene_info_new[gene_info_new$rna_brain_change_studied == TRUE,]
+gene_info_new[gene_info_new$isAnyRNAChangedInADBrain == FALSE,]
+```
+
+```{r}
+gene_info_new[gene_info_new$hgnc_symbol == '',]
 ```

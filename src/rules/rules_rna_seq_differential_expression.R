@@ -5,10 +5,10 @@ rules_rna_seq_differential_expression <- validator(
   adj_p_val > 0, 
   
   # ci_l
-  is.numeric(adj_p_val),
+  is.numeric(ci_l),
   
   # ci_r
-  is.numeric(adj_p_val),
+  is.numeric(ci_r),
   
   # ensembl_gene_id
   is.character(ensembl_gene_id),
@@ -16,7 +16,7 @@ rules_rna_seq_differential_expression <- validator(
   field_length(ensembl_gene_id, n=15),
   
   # fc
-  is.numeric(adj_p_val),
+  is.numeric(fc),
   
   # hgnc_symbol
   is.character(hgnc_symbol),
@@ -24,7 +24,8 @@ rules_rna_seq_differential_expression <- validator(
   field_length(hgnc_symbol, min=0, max=100),
   
   # logfc
-  is.numeric(adj_p_val),
+  is.numeric(logfc),
+  abs(logfc) > 0,
   
   # model
   is.character(model),
