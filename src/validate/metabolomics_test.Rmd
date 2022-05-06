@@ -11,12 +11,13 @@ prepare()
 # Validation run metadata
 ```{r echo=FALSE}
 # file-specific
+name <- "metabolomics"
+source_synId <- "syn26064497"
 old_synId <-  "syn19315964" 
 new_synId <- "syn19276330" 
 
-name <- "metabolomics"
-
 # not file-specific
+source_name <- paste(name, "source", sep="_")
 old_name <- paste(name, "old", sep="_")
 new_name <- paste(name, "new", sep="_")
 rules <- paste0("rules_", name)
@@ -33,10 +34,15 @@ source("~/repos/rstudio/agora-data-validation/src/utils.R")
 download_files(old_synId, new_synId, name)
 ```
 
+```{r}
+source <- download_file(source_synId, type = "f")
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+```
+
 # Compared old & new files
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare(get(old_name), get(new_name), name, summarize=FALSE)
+compare(get(old_name), get(new_name), name)
 ```
 
 

@@ -34,10 +34,15 @@ source("~/repos/rstudio/agora-data-validation/src/utils.R")
 download_files(old_synId, new_synId, name)
 ```
 
+```{r}
+source <- download_file(source_synId, type = "tsv") 
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+```
+
 # Compared old & new files
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare(get(old_name), get(new_name), name, summarize=FALSE)
+compare(get(old_name), get(new_name), name)
 ```
 
 
@@ -57,16 +62,13 @@ test(get(new_name), get(rules))
 We have identical duplicates for ENSG00000229425/AJ009632.2 (9 tissues x 4 models x 2 = 72)
 => these duplicates should not cause issues in the app
 
-
-AG-451
-
 ***
 # Validation failure investigations
 ***
 
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule
-v <- validator(	is_unique(RULE))
+v <- validator(RULE)
 cf <- confront(rna_seq_differential_expression_new, v)
 out <- values(cf)
 is_unique_fails <- rna_seq_differential_expression_new[!out,]
@@ -96,9 +98,7 @@ Are the dups from the source table?
 => no
 
 ```{r}
- rna_de_source <- download_file("syn27211942", "rna_seq_source", "tsv")
-
-rows <- rna_de_source[rna_de_source$ensembl_gene_id == 'ENSG00000229425',]
+rows <- rna_seq_differential_expression_source[rna_seq_differential_expression_source$ensembl_gene_id == 'ENSG00000229425',]
 
 mayo <- rows[rows$Study == "MAYO",] # 2 regions: 2 x 4 = 8 rows expected in source
 mssm <- rows[rows$Study == "MSSM",] # 4 regions: 4 x 4 = 16 rows expected in source
@@ -109,151 +109,11 @@ print(mssm)
 print(rosmap)
 ```
 
-# abs(logfc) > 0: 3337 fails
-AG-451
-New RNA seq has 3337/722444 rows with lfc == 0
-Source table has 0/745580 rows with lfc == 0
-
-3337 rows -> 2998 unique ENSGs
-
-```{r}
-zero_fc <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$logfc  == 0,]
-zero_pv <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$adj_p_va == 0,]
-zero_fc_pv <- zero_fc[zero_fc$adj_p_val == 0, ]
-print(zero_fc)
-print(zero_pv)
-print(zero_fc_pv)
-
-
-```
-
-```{r}
-source_zero_fc <- rna_de_source[rna_de_source$logFC == 0 ,]
-source_zero_pv <- rna_de_source[rna_de_source$adj.P.Val == 0 ,]
-
-print(source_zero_fc)
-print(source_zero_pv)
-
-```
-```{r}
-zero_fc <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$logfc  == 0,]
-ensgs <- unique(zero_fc$ensembl_gene_id)
-
-
-source_rows <- rna_de_source[rna_de_source$ensembl_gene_id %in% ensgs,]
-print(source_rows)
-
-```
-
-```{r}
-json_row <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$ensembl_gene_id == 'ENSG00000123684',]
-json_refined <- json_row[json_row$tissue == "CBE",]
-
-source_row <- rna_de_source[rna_de_source$ensembl_gene_id == "ENSG00000123684",]
-source_refined <- source_row[source_row$Tissue == "CBE",]
-
-print(json_refined)
-print(source_refined)
-```
 
 ***
 # Other Validation
 ***
 
-```{r}
-rna_seq_differential_expression_new[rna_seq_differential_expression_new$hgnc_symbol == 'GSTM1', ]
-rna_seq_differential_expression_new[rna_seq_differential_expression_new$hgnc_symbol == 'CDH3', ]
-rna_de_source[rna_de_source$hgnc_symbol == 'GSTM1', ]
-rna_de_source[rna_de_source$hgnc_symbol == 'CDH3', ]
-```
-
-```{r}
-
-genes <- rna_de_source[rna_de_source$hgnc_symbol %in% c('GSTM1','CDH3'),]
-genes_tissue <- genes[genes$Tissue == 'IFG',]
-
-
-```
-
-
-How many genes are missing data for at least one region?
-```{r}
-counts <- rna_seq_differential_expression_new %>% count(ensembl_gene_id, sort = TRUE)
-print(counts)
-counts[counts$Freq < 36]
-```
-
-
-```{r}
-rna_seq_differential_expression_new[rna_seq_differential_expression_new$ensembl_gene_id == 'ENSG00000123684',]
-```
-
-
-AG-350: do we still have genes with missing values in the new rnaseq data?
-
-```{r}
-rna_de_source[rna_de_source$adj.P.Val == 0,]
-rna_de_source[rna_de_source$logFC == 0,]
-rna_de_source[rna_de_source$CI.L == 0,]
-rna_de_source[rna_de_source$CI.R == 0,]
-```
-
-```{r}
-rna_seq_differential_expression_old[rna_seq_differential_expression_old$adj_p_val == 0, ]
-rna_seq_differential_expression_new[rna_seq_differential_expression_new$adj_p_val == 0, ]
-
-rna_seq_differential_expression_old[rna_seq_differential_expression_old$logfc == 0, ]
-rna_seq_differential_expression_new[rna_seq_differential_expression_new$logfc == 0, ]
-
-rna_seq_differential_expression_old[rna_seq_differential_expression_old$ci_l == 0, ]
-rna_seq_differential_expression_new[rna_seq_differential_expression_new$ci_l == 0, ]
-
-rna_seq_differential_expression_old[rna_seq_differential_expression_old$ci_r == 0, ]
-rna_seq_differential_expression_new[rna_seq_differential_expression_new$ci_r == 0, ]
-
-```
-
-
-
-old vs new distributions
-
-```{r}
-#rna_de_source_old <- download_file("syn14237651", "rna_seq_source_old", "tsv")
-tcx_model_old <- rna_de_source_old[rna_de_source_old$Model == "Diagnosis",]
-tcx_sex_old <- rna_de_source_old[rna_de_source_old$Sex == "All",]
-tcx_old <- tcx_model_old[tcx_model_old$Tissue == 'TCX',]
-max(tcx_old$logFC)
-```
-
-
-```{r}
-#rna_de_source <- download_file("syn27211942", "rna_seq_source", "tsv")
-tcx_model <- rna_de_source[rna_de_source$Model == "Diagnosis",]
-tcx_sex <- rna_de_source[rna_de_source$Sex == "All",]
-tcx <- rna_de_source[rna_de_source$Tissue == 'TCX',]
-max(tcx$logFC)
-```
-
-```{r}
-length(unique(rna_de_source$ensembl_gene_id))
-```
-
-```{r}
-sum(rna_seq_differential_expression_source$adj.P.Val > 1)
-```
-
-```{r}
-sum(rna_seq_differential_expression_source$P.Value > 1)
-```
-
-```{r}
-matches <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$ensembl_gene_id == 'ENSG00000233009',]
-matches[matches$adj_p_val < 0.05,]
-```
-
-```{r}
-
-```
 
 # l2fc and pval distributions (opacity and diameter tuning)
 

@@ -35,7 +35,7 @@ download_files(old_synId, new_synId, name)
 # Compared old & new files
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare(get(old_name), get(new_name), name, summarize=FALSE)
+compare(get(old_name), get(new_name), name)
 ```
 
 
@@ -73,33 +73,17 @@ is_unique_fails
 
 Ensure that no scores were dropped by validating that the distributions contain the expected total number of genes
 
-
-
 ```{r echo=FALSE}
 cat("\nOverall distribution total genes: ", sum(distribution_data_new$Logsdon.distribution))
-cat("\nOverall total genes expected: ", "24659") # from overall_scores_test.json (AG-407)
+cat("\nOverall total genes expected: ", "24659") # from overall_scores_test.json
 
 cat("\n\nGenomics distribution total genes: ", sum(distribution_data_new$OmicsScore.distribution))
-cat("\nGenomics total genes expected: ", "23876") # from overall_scores_test.json (AG-407)
+cat("\nGenomics total genes expected: ", "23876") # from overall_scores_test.json
 
 cat("\n\nLiterature distribution total genes: ", sum(distribution_data_new$LiteratureScore.distribution))
-cat("\nLiterature total genes expected: ", "15656") # from overall_scores_test.json (AG-407)
+cat("\nLiterature total genes expected: ", "15656") # from overall_scores_test.json
 
 cat("\n\nGenetics distribution total genes: ", sum(distribution_data_new$GeneticsScore.distribution))
-cat("\nGenetics total genes expected: ", "23319") # from overall_scores_test.json (AG-407)
+cat("\nGenetics total genes expected: ", "23319") # from overall_scores_test.json
 ```
-
-Testing data v4 results:
-
-Overall distribution total genes:  24659
-Overall total genes expected:  24659
-
-Genomics distribution total genes:  23876
-Genomics total genes expected:  23876
-
-Literature distribution total genes:  15656
-Literature total genes expected:  15656
-
-Genetics distribution total genes:  23319
-Genetics total genes expected:  23319
 

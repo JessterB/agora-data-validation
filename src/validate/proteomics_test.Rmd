@@ -11,11 +11,10 @@ prepare()
 # Validation run metadata
 ```{r echo=FALSE}
 # file-specific
+name <- "proteomics"
 source_synId <- "syn18689335" # csv
 old_synId <-  "syn18693175" 
 new_synId <- "syn18691125"  
-
-name <- "proteomics"
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")
@@ -34,10 +33,17 @@ source("~/repos/rstudio/agora-data-validation/src/utils.R")
 download_files(old_synId, new_synId, name)
 ```
 
+```{r}
+source <- download_file(source_synId, type = "csv")
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+```
+
+
+
 # Compared old & new files
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare(get(old_name), get(new_name), name, summarize=FALSE)
+compare(get(old_name), get(new_name), name)
 ```
 
 
@@ -71,131 +77,27 @@ is_unique_fails
 ```
 
 
-
-# field_format(uniprotid, "[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}", type = "regex"): 24 fails
-
-We are stripping 'NA' out of uniprotId for some reason!
-
-```{r}
-# yields a dataframe containing the failure cases for a specific rule
-v <- validator(field_format(uniprotid, "[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}", type = "regex"))
-cf <- confront(proteomics_new, v)
-out <- values(cf)
-is_unique_fails <- proteomics_new[!out,]
-is_unique_fails
-```
-
-
-```{r}
-ensgs <- is_unique_fails$ensembl_gene_id
-proteomics_old[proteomics_old$ensembl_gene_id %in% ensgs,]
-```
-
-
-## RESOLVED: AG-349 validation
 ### cor_pval > 0: 7680 fails
 ### pval > 0: 7680 fails
 
-- now 7440 fails, which is the same number of 0s we had before! 
-- MattF fixed via custom json serializer
+These are all due to NA values
 
 ```{r}
-# yields a dataframe containing the failure cases for a specific rule
-v <- validator(pval > 0)
-cf <- confront(proteomics_new, v)
-out <- values(cf)
-is_unique_fails <- proteomics_new[!out,]
-is_unique_fails
+proteomics_new[is.na(proteomics_new$cor_pval),]
+proteomics_new[is.na(proteomics_new$pval),]
 ```
 
-```{r}
-# yields a dataframe containing the failure cases for a specific rule
-v <- validator(cor_pval > 0)
-cf <- confront(proteomics_new, v)
-out <- values(cf)
-is_unique_fails <- proteomics_new[!out,]
-is_unique_fails
-```
-
-* All cor_pval fails due to cor_pval == 0 
-* All pval fails due to pval == 0
-* All rows with cor_pval == 0 also have pval == 0
-* 36 rows have pval == 0 & cor_pval !== 0
-
-Did the old data have this issue?
-* Old file had 7680 cor_pval == NA and 7680 pval == NA
-
-=> New file has +60 (cor_pval) and +96 (pval) unexpected 0s
-
-Did the source data have the issue?
-* Source file has 7680 cor_pval == NA and 7680 pval == NA
-=> New file has +60 (cor_pval) and +96 (pval) unexpected 0s
-
-
-Filed AG-349 for tracking
-
-
-```{r}
-cor_pval_new_zero <- proteomics_new[proteomics_new$cor_pval == 0,]
-print(cor_pval_new_zero[order(cor_pval_new_zero$hgnc_gene_id, cor_pval_new_zero$tissue),])
-```
-
-```{r}
-pval_new_zero <- proteomics_new[proteomics_new$pval == 0,]
-print(pval_new_zero[order(pval_new_zero$hgnc_gene_id, pval_new_zero$tissue),])
-```
-
-36 have pval == 0 & cor_pval !== 0
-
-```{r}
-setdiff(pval_new_zero, cor_pval_new_zero) # 
-```
-
-
-
-```{r}
-cor_pval_old_na <- proteomics_old[is.na(proteomics_old$cor_pval),]
-nrow(cor_pval_old_na)
-```
-
-```{r}
-pval_old_na <- proteomics_old[is.na(proteomics_old$pval),]
-nrow(pval_old_na)
-```
-
-All 7680 are NA for all of the results fields in old
-```{r}
-cat("\nlog2_fc: ",nrow(cor_pval_old_na[is.na(cor_pval_old_na$log2_fc),])) # 7680
-cat("\nci_upr: ",nrow(cor_pval_old_na[is.na(cor_pval_old_na$ci_upr),])) # 7680
-cat("\nci_lwr: ",nrow(cor_pval_old_na[is.na(cor_pval_old_na$ci_lwr),])) # 7680
-```
-
-
-```{r}
-proteomics_source <- download_file("syn18689335", "proteomics_source", type="csv")
-```
-
-```{r}
-proteomics_source[proteomics_source$GeneName == 'PLEC',]
-```
-
+Source file
 
 ```{r}
 cor_pval_source_na <- proteomics_source[is.na(proteomics_source$Cor_PVal),] 
 nrow(cor_pval_source_na)
 ```
 
-
 ```{r}
-pval_source_na <- proteomics_source[is.na(proteomics_source$PVal),]
+pval_source_na <- proteomics_source[is.na(proteomics_source$PVal),] 
 nrow(pval_source_na)
 ```
-```{r}
-cat("\nlog2_fc: ",nrow(cor_pval_old_na[is.na(cor_pval_old_na$log2_fc),])) 
-cat("\nci_upr: ",nrow(cor_pval_old_na[is.na(cor_pval_old_na$ci_upr),])) 
-cat("\nci_lwr: ",nrow(cor_pval_old_na[is.na(cor_pval_old_na$ci_lwr),])) 
-```
-
 
 All 7680 are NA for all of the other results fields in source
 
@@ -203,53 +105,6 @@ All 7680 are NA for all of the other results fields in source
 cat("\nLog2_FC: ",nrow(cor_pval_source_na[is.na(cor_pval_source_na$Log2_FC),])) 
 cat("\nCI_Upr: ",nrow(cor_pval_source_na[is.na(cor_pval_source_na$CI_Upr),])) 
 cat("\nCI_Lwr: ",nrow(cor_pval_source_na[is.na(cor_pval_source_na$CI_Lwr),]))
-```
-
-
-A few specific cases from the 36 that have pval==0 and cor_pval != 0 in new
-
-NDUFB5|O43674 - DLPFC
-- pval is populated in source
-
-```{r}
-proteomics_source[proteomics_source$UniqID == "NDUFB5|O43674",]
-```
-
-LETM1|O95202 - DLPFC
-- pval is populated in source
-
-```{r}
-proteomics_source[proteomics_source$UniqID == "LETM1|O95202", ]
-```
-
-Isolating the 60 new cor_pval cases - we only see 51 here so there must be 9 dups??
-```{r}
-new_zero_uniqid <- cor_pval_new_zero$uniqid
-source_na_uniqid <- cor_pval_source_na$UniqID
-setdiff(new_zero_uniqid, source_na_uniqid)
-```
-
-Isolating the 96 new pval cases - we only see 80 here, so there must be 16 dups (9 of which should be common with the cor_pval dups)
-```{r}
-new_pval_zero_uniqid <- pval_new_zero$uniqid
-source_pval_na_uniqid <- pval_source_na$UniqID
-setdiff(new_pval_zero_uniqid, source_pval_na_uniqid)
-```
-
-
-Is there anything special about these cases?
-
-```{r}
-proteomics_new[proteomics_new$uniqid == "PDHX|O00330-3",]
-```
-
-
-```{r}
-proteomics_source[proteomics_source$UniqID == "PDHX|O00330-3",]
-```
-
-```{r}
-proteomics_source[proteomics_source$UniqID == "PURA|Q00577",]
 ```
 
 
@@ -263,7 +118,7 @@ Analysis results:
 
 
 Resolution:     
-* The app currently looks up proteomics by hgnc only, so we should never get the weirdo rows   
+* The app currently looks up proteomics by hgnc only, so we should never get the weirdo rows -> no longer true though
 * In some cases (e.g. ENSG00000172867), the weirdo rows (CON__P35908) are the ones with data...but again, that is how we got it from the source  
 * Since only 3 ENSGs have these dups, they all come from the source data, and we don't surface the weird rows in Agora...let's do nothing right now  
 * Comment out this rule until/unless we either  

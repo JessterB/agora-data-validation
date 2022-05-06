@@ -11,12 +11,13 @@ prepare()
 # Validation run metadata
 ```{r echo=FALSE}
 # file-specific
+name <- "overall_scores"
+source_synId <- "syn25575156"
 old_synId <-  "syn25741025" 
 new_synId <-  "syn25740976" 
 
-name <- "overall_scores"
-
 # not file-specific
+source_name <- paste(name, "source", sep="_")
 old_name <- paste(name, "old", sep="_")
 new_name <- paste(name, "new", sep="_")
 rules <- paste0("rules_", name)
@@ -33,10 +34,16 @@ source("~/repos/rstudio/agora-data-validation/src/utils.R")
 download_files(old_synId, new_synId, name)
 ```
 
+```{r}
+source <- download_file(source_synId, type = "table")
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+```
+
+
 # Compared old & new files
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare(get(old_name), get(new_name), name, summarize=FALSE)
+compare(get(old_name), get(new_name), name)
 ```
 
 
@@ -49,7 +56,11 @@ test(get(new_name), get(rules))
 ***
 # Outstanding validation failures
 ***
-N/A; Note that the paired failures for !is.na and in_range for each subscore are expected
+Note that these paired failures for GeneName & for each subscore are expected (missing hgnc, missing scores):
+* !is.na(GeneticsScore), in_range(GeneticsScore, min = 0, max = 3): 1340 fails
+* !is.na(GeneName), 	field_length(GeneName, min = 0, max = 100): 5447 fails
+* !is.na(LiteratureScore), in_range(LiteratureScore, min = 0, max = 2): 9003 fails
+* !is.na(OmicsScore), in_range(OmicsScore, min = 0, max = 2): 783 fails
 
 ***
 # Validation failure investigations
@@ -65,135 +76,106 @@ is_unique_fails
 ```
 
 
-
-## field_length(hgnc_gene_id, min = 2, max = 100): 5447 fails
-
-- All fails are due to blank string hgnc values  
-- The old file had even more NAs  
-- These are all missing lit scores, but that makes sense because gene names are used for the pubmed searches  
-- Agora can display the scores with NA GeneName values just fine  
-
-Resolution: relax rule
-
-```{r}
-source("~/repos/rstudio/agora-data-validation/src/utils.R")
-overall_scores_new[overall_scores_new$GeneName == "",]
-```
-
-
-We had even more NAs in the old file  
-Note that a spot check shows that the app is able to display the NA GeneName scores:   (https://agora-develop.adknowledgeportal.org/genes/(genes-router:gene-details/ENSG00000267249))  
-
-```{r}
-overall_scores_old[is.na(overall_scores_old$GeneName),]
-```
-
 ***
 # Other validation
 ***
 
-## AG-407 disambiguation validation
+## Cross-file validation
 
-get source data
-
-```{r}
-overall_scores_source_new <- download_file("syn25575156", "overall_scores_source", "table")
-```
-
-compare source (expected) with new file
+Compare score counts with source file & generate expected score counts used by distribution_data_test
 
 ```{r}
 
 # total number of rows in source vs new
-cat("\nTotal rows in source (syn25575156): ", nrow(overall_scores_source_new))
+cat("\nTotal rows in source (syn25575156): ", nrow(overall_scores_source))
 cat("\nTotal rows in new (syn26868918): ", nrow(overall_scores_new))
-cat("\nDiff: ", nrow(overall_scores_source_new) - nrow(overall_scores_new))
+cat("\nDiff: ", nrow(overall_scores_source) - nrow(overall_scores_new))
 
 # number of non-zero vs 0 overall scores
-overall_source_nonzero <- overall_scores_source_new[overall_scores_source_new$Overall != 0,]
-overall_source_zero <- overall_scores_source_new[overall_scores_source_new$Overall == 0,]
+overall_source_nonzero <- overall_scores_source[overall_scores_source$Overall != 0,]
+overall_source_zero <- overall_scores_source[overall_scores_source$Overall == 0,]
 
 overall_new_nonzero <- overall_scores_new[overall_scores_new$Logsdon != 0,]
 overall_new_zero <- overall_scores_new[overall_scores_new$Logsdon == 0,]
         
 cat("\n\nOVERALL")                                 
-cat("\noverall_scores_source_new$Overall != 0: ", nrow(overall_source_nonzero))
-cat("\noverall_scores_source_new$Overall == 0: ", nrow(overall_source_zero))
-cat("\noverall source (nonzero + zero)/expected: ", nrow(overall_source_nonzero) + nrow(overall_source_zero), "/", nrow(overall_scores_source_new))
+cat("\noverall_scores_source$Overall != 0: ", nrow(overall_source_nonzero))
+cat("\noverall_scores_source$Overall == 0: ", nrow(overall_source_zero))
+cat("\noverall source (nonzero + zero)/expected: ", nrow(overall_source_nonzero) + nrow(overall_source_zero), "/", nrow(overall_scores_source))
 
 cat("\n\noverall_scores_new$Logsdon != 0: ", nrow(overall_new_nonzero))
 cat("\noverall_scores_new$Logsdon == 0: ", nrow(overall_new_zero))
 cat("\noverall new (nonzero + zero)/expected: ", nrow(overall_new_nonzero) + nrow(overall_new_zero), "/", nrow(overall_scores_new))
 
 # OMICS
-genomics_source_scored <- overall_scores_source_new[overall_scores_source_new$isScored_omics == 'Y', ]
-genomics_source_unscored <- overall_scores_source_new[overall_scores_source_new$isScored_omics == 'N', ]
+genomics_source_scored <- overall_scores_source[overall_scores_source$isScored_omics == 'Y', ]
+genomics_source_unscored <- overall_scores_source[overall_scores_source$isScored_omics == 'N', ]
 
 genomics_new <- overall_scores_new$OmicsScore
 genomics_new_scored <- overall_scores_new[!is.na(genomics_new),]
 genomics_new_unscored <- overall_scores_new[is.na(genomics_new),]
 
-genomics_source_zero <- overall_scores_source_new[overall_scores_source_new$OmicsScore == 0,]
+genomics_source_zero <- overall_scores_source[overall_scores_source$OmicsScore == 0,]
 genomics_new_zero <- overall_scores_new[overall_scores_new$OmicsScore == 0, ]
 
 
 cat("\n\nGENOMICS")
-cat("\noverall_scores_source_new$isScored_omics == 'Y': ", nrow(genomics_source_scored))
-cat("\noverall_scores_source_new$isScored_omics == 'N': ", nrow(genomics_source_unscored))
-cat("\nomics source (Y + N)/expected: ", nrow(genomics_source_scored) + nrow(genomics_source_unscored), "/", nrow(overall_scores_source_new))
+cat("\noverall_scores_source$isScored_omics == 'Y': ", nrow(genomics_source_scored))
+cat("\noverall_scores_source$isScored_omics == 'N': ", nrow(genomics_source_unscored))
+cat("\nomics source (Y + N)/expected: ", nrow(genomics_source_scored) + nrow(genomics_source_unscored), "/", nrow(overall_scores_source))
 
 cat("\n\noverall_scores_new[!is.nan(genomics_new): ", nrow(genomics_new_scored))
 cat("\noverall_scores_new[is.nan(genomics_new): ", nrow(genomics_new_unscored))
 cat("\nomics new (NA + !NA)/expected: ", nrow(genomics_new_scored) + nrow(genomics_new_unscored), "/", nrow(overall_scores_new))
 
-cat("\n\noverall_scores_source_new$OmicsScore == 0 ", nrow(genomics_source_zero))
+cat("\n\noverall_scores_source$OmicsScore == 0 ", nrow(genomics_source_zero))
 cat("\noverall_scores_new$OmicsScore == 0: ", nrow(genomics_new_zero))
 
 
 # LIT
-lit_source_scored <- overall_scores_source_new[overall_scores_source_new$isScored_lit == 'Y', ]
-lit_source_unscored <- overall_scores_source_new[overall_scores_source_new$isScored_lit == 'N', ]
+lit_source_scored <- overall_scores_source[overall_scores_source$isScored_lit == 'Y', ]
+lit_source_unscored <- overall_scores_source[overall_scores_source$isScored_lit == 'N', ]
 
 lit_new <- overall_scores_new$LiteratureScore
 lit_new_scored <- overall_scores_new[!is.na(lit_new),]
 lit_new_unscored <- overall_scores_new[is.na(lit_new),]
 
-lit_source_zero <- overall_scores_source_new[overall_scores_source_new$LiteratureScore == 0,]
+lit_source_zero <- overall_scores_source[overall_scores_source$LiteratureScore == 0,]
 lit_new_zero <- overall_scores_new[overall_scores_new$LiteratureScore == 0, ]
 
 cat("\n\nLIT")
-cat("\noverall_scores_source_new$isScored_lit == 'Y': ", nrow(lit_source_scored))
-cat("\noverall_scores_source_new$isScored_lit == 'N': ", nrow(lit_source_unscored))
-cat("\nlit source (Y + N)/expected: ", nrow(lit_source_scored) + nrow(lit_source_unscored), "/", nrow(overall_scores_source_new))
+cat("\noverall_scores_source$isScored_lit == 'Y': ", nrow(lit_source_scored))
+cat("\noverall_scores_source$isScored_lit == 'N': ", nrow(lit_source_unscored))
+cat("\nlit source (Y + N)/expected: ", nrow(lit_source_scored) + nrow(lit_source_unscored), "/", nrow(overall_scores_source))
 
 cat("\n\noverall_scores_new[!is.na(lit_new): ", nrow(lit_new_scored))
 cat("\noverall_scores_new[is.na(lit_new): ", nrow(lit_new_unscored))
 cat("\nlit new (NA + !NA)/expected: ", nrow(lit_new_scored) + nrow(lit_new_unscored), "/", nrow(overall_scores_new))
 
-cat("\n\noverall_scores_source_new$LiteratureScore == 0: ", nrow(lit_source_zero))
+cat("\n\noverall_scores_source$LiteratureScore == 0: ", nrow(lit_source_zero))
 cat("\noverall_scores_new$LiteratureScore == 0: ", nrow(lit_new_zero))
 
 # from source file, number of scored vs unscored rows for genetics
-genetics_source_scored <- overall_scores_source_new[overall_scores_source_new$isScored_genetics == 'Y', ]
-genetics_source_unscored <- overall_scores_source_new[overall_scores_source_new$isScored_genetics == 'N', ]
+genetics_source_scored <- overall_scores_source[overall_scores_source$isScored_genetics == 'Y', ]
+genetics_source_unscored <- overall_scores_source[overall_scores_source$isScored_genetics == 'N', ]
 
 genetics_new <- overall_scores_new$GeneticsScore
 genetics_new_scored <- overall_scores_new[!is.na(genetics_new),]
 genetics_new_unscored <- overall_scores_new[is.na(genetics_new),]
 
-genetics_source_zero <- overall_scores_source_new[overall_scores_source_new$GeneticsScore == 0,]
+genetics_source_zero <- overall_scores_source[overall_scores_source$GeneticsScore == 0,]
 genetics_new_zero <- overall_scores_new[overall_scores_new$GeneticsScore == 0, ]
 
 cat("\n\nGENETICS")
-cat("\noverall_scores_source_new$isScored_genetics == 'Y': ", nrow(genetics_source_scored))
-cat("\noverall_scores_source_new$isScored_genetics == 'N': ", nrow(genetics_source_unscored))
-cat("\ngenetics source (Y + N)/expected: ", nrow(genetics_source_scored) + nrow(genetics_source_unscored), "/", nrow(overall_scores_source_new))
+cat("\noverall_scores_source$isScored_genetics == 'Y': ", nrow(genetics_source_scored))
+cat("\noverall_scores_source$isScored_genetics == 'N': ", nrow(genetics_source_unscored))
+cat("\ngenetics source (Y + N)/expected: ", nrow(genetics_source_scored) + nrow(genetics_source_unscored), "/", nrow(overall_scores_source))
 
 cat("\n\noverall_scores_new[!is.na(genetics_new): ", nrow(genetics_new_scored))
 cat("\noverall_scores_new[is.na(genetics_new): ", nrow(genetics_new_unscored))
 cat("\ngenetics new (NA + !NA)/expected: ", nrow(genetics_new_scored) + nrow(genetics_new_unscored), "/", nrow(overall_scores_new))
 
-cat("\n\noverall_scores_source_new$GeneticsScore == 0: ", nrow(genetics_source_zero))
+cat("\n\noverall_scores_source$GeneticsScore == 0: ", nrow(genetics_source_zero))
 cat("\noverall_scores_new$GeneticsScore == 0: ", nrow(genetics_new_zero))
 
 ```

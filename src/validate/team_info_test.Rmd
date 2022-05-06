@@ -14,10 +14,10 @@ prepare()
 # Validation run metadata
 ```{r echo=FALSE}
 # file-specific
+name <- "team_info"
+source_synId <- "syn12615624" #csv
 old_synId <-  "syn12616884" 
 new_synId <- "syn17015358" 
-
-name <- "team_info"
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")
@@ -36,10 +36,15 @@ source("~/repos/rstudio/agora-data-validation/src/utils.R")
 download_files(old_synId, new_synId, name)
 ```
 
+```{r}
+source <- download_file(source_synId, type = "csv") 
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+```
+
 # Compared old & new files
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare(get(old_name), get(new_name), name, summarize=FALSE)
+compare(get(old_name), get(new_name), name)
 ```
 
 
@@ -72,11 +77,3 @@ is_unique_fails
 ***
 # Other validation
 ***
-
-2 new teams
-```{r}
-teams <- team_info_old$team
-
-team_info_new[!team_info_new$team %in% teams,]
-
-```

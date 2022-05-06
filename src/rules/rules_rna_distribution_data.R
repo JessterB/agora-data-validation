@@ -28,8 +28,5 @@ rules_rna_distribution_data <- validator(
   max > third_quartile,
   third_quartile > median,
   median > first_quartile,
-  first_quartile > min,
-  all.equal(max, third_quartile + ((third_quartile - first_quartile) * 1.5)),
-  all.equal(min, first_quartile - ((third_quartile - first_quartile) * 1.5))
-  
+  first_quartile > min
 )

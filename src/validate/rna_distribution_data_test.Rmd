@@ -1,5 +1,5 @@
 ---
-title: "REPLACEME.json"
+title: "rna_distribution_data.json"
 output: html_notebook
 ---
 
@@ -32,10 +32,16 @@ source("~/repos/rstudio/agora-data-validation/src/utils.R")
 download_files(old_synId, new_synId, name)
 ```
 
+```{r}
+source <- download_file(source_synId, type = "REPLACEME") # file type: csv, tsv, json, f (feather)
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+```
+
+
 # Compared old & new files
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare(get(old_name), get(new_name), name, summarize=FALSE)
+compare(get(old_name), get(new_name), name)
 ```
 
 
@@ -67,13 +73,24 @@ is_unique_fails
 ***
 # Other validation
 ***
-Distribution verification
+Calculate expected min/max and compare to actual
+```{r}
+eIQR <- (rna_distribution_data_new$third_quartile - rna_distribution_data_new$first_quartile) * 1.5
+max <- rna_distribution_data_new$third_quartile + eIQR
+min <- rna_distribution_data_new$first_quartile - eIQR
+
+df <- data.frame(calc_min=min, file_min=rna_distribution_data_new$min, calc_max=max, file_max=rna_distribution_data_new$max)
+
+print(df)
+all.equal(df$calc_min, df$file_min)
+all.equal(df$calc_max, df$file_max)
+
+```
+
+
+Calculate distribution locally from source data and compare to processed distribution data
 
 ```{r}
-
-# tissue <- "ACC"
-# model <- "AD Diagnosis (males and females)"
-
 tissues <- sort(unique(rna_seq_differential_expression_new$tissue))
 models <- unique(rna_seq_differential_expression_new$model)
 
@@ -96,109 +113,18 @@ for (tissue in tissues) {
     dist_tissue <- rna_distribution_data_new[rna_distribution_data_new$tissue == tissue,]
     dist_tissue_model <- dist_tissue[dist_tissue$model == model,]
     
-    cat("\n\nTissue:", tissue, 
+    tolerance <- 0.01
+    
+        cat("\n\nTissue:", tissue, 
         "\nModel:", model, 
-        "\n  Data: ", min, q1, median, q3, max,
-        "\n  Distribution: ", dist_tissue_model$min, dist_tissue_model$first_quartile, dist_tissue_model$median, dist_tissue_model$third_quartile, dist_tissue_model$max)
-  }}
+        "\nSource Data \tDistribution Data", "Diff within tolerance?",
+        "\n", min, "\t", dist_tissue_model$min, "\t", abs(min - dist_tissue_model$min) < tolerance,
+        "\n", q1, "\t", dist_tissue_model$first_quartile, "\t", abs(q1 - dist_tissue_model$first_quartile) < tolerance,
+        "\n", median, "\t", dist_tissue_model$median, "\t",abs(median -dist_tissue_model$median) < tolerance,
+        "\n", q3, "\t", dist_tissue_model$third_quartile, "\t", abs(q3 - dist_tissue_model$third_quartile) < tolerance,
+        "\n", max, "\t", dist_tissue_model$max, "\t", abs(max -dist_tissue_model$max) < tolerance
+        )
 
-```
-
-
-
-```{r}
-tissues <- unique(rna_seq_differential_expression_new$tissue)
-models <- unique(rna_seq_differential_expression_new$model)
-
-for (tissue in tissues) {
-  for (model in models) {
-    tissue_rows <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$tissue == tissue,]
-    tissue_model_rows <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$model == model,]
-    tissue_model_lfc <- tissue_model_rows$logfc
-    median <- median(tissue_model_lfc)
-    quartiles <- quantile(tissue_model_lfc, prob=c(.25, .75))
-    
-    dist_tissue <- rna_distribution_data_new[rna_distribution_data_new$tissue == tissue,]
-    dist_tissue_model <- dist_tissue[dist_tissue$model == model,]
-    
-    cat("\n\nTissue:", tissue, "\nModel:", model, "\n  Calculated Median", median, "\n  File Median", dist_tissue_model$median, "\n   Median diff", median - dist_tissue_model$median, "\n  Calculated Quartiles", quartiles, "\n  File Quartiles", dist_tissue_model$first_quartile, dist_tissue_model$third_quartile)
-    
-  }
-}
-```
-
-
-manually calculate min/max w/1.5IQR 
-```{r}
-q3 <- rna_distribution_data_new$third_quartile
-q1 <- rna_distribution_data_new$first_quartile
-IQR <- q3 - q1
-EIQR <- IQR * 1.5
-
-mins <- q1 - EIQR
-maxs <- q3 + EIQR
-
-rna_distribution_data_new$min <- mins
-rna_distribution_data_new$max <- maxs
-rna_distribution_data_new
-```
-
-Symmetry in distribution data
-```{r}
-
-tissues <- unique(rna_seq_differential_expression_new$tissue)
-models <- unique(rna_seq_differential_expression_new$model)
-
-for (tissue in tissues) {
-  
-  for (model in models) {
-    
-    dist_tissue <- rna_distribution_data_new[rna_distribution_data_new$tissue == tissue,]
-    dist_tissue_model <- dist_tissue[dist_tissue$model == model,]
-    
-    IQR <- dist_tissue_model$third_quartile - dist_tissue_model$first_quartile
-    EIQR <- IQR * 1.5
-    
-    min <- dist_tissue_model$first_quartile - EIQR
-    max <- dist_tissue_model$third_quartile + EIQR
-    
-    cat("\nMin:", min, dist_tissue_model$min, "\nMax:", max, dist_tissue_model$max, "\nIQR:", IQR)
-
-}}
-```
-
-
-```{r}
-
-# tissue <- "ACC"
-# model <- "AD Diagnosis (males and females)"
-
-tissues <- sort(unique(rna_seq_differential_expression_new$tissue))
-models <- unique(rna_seq_differential_expression_new$model)
-
-for (tissue in tissues) {
-  
-  for (model in models) {
-
-    tissue_rows <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$tissue == tissue,]
-    tissue_model_rows <- tissue_rows[tissue_rows$model == model,]
-    tissue_model_lfc <- tissue_model_rows$logfc
-    
-    median <- median(tissue_model_lfc)
-    q1 <- quantile(tissue_model_lfc, c(0.25))
-    q3 <- quantile(tissue_model_lfc, c(0.75))
-    IQR <- q3 - q1
-    max <- q3 + (1.5 * IQR)
-    min <- q1 - (1.5 * IQR)
-    
-    
-    dist_tissue <- rna_distribution_data_new[rna_distribution_data_new$tissue == tissue,]
-    dist_tissue_model <- dist_tissue[dist_tissue$model == model,]
-    
-    cat("\n\nTissue:", tissue, 
-        "\nModel:", model, 
-        "\n  Data: ", min, q1, median, q3, max,
-        "\n  Distribution: ", dist_tissue_model$min, dist_tissue_model$first_quartile, dist_tissue_model$median, dist_tissue_model$third_quartile, dist_tissue_model$max)
   }}
 
 ```

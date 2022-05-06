@@ -12,10 +12,12 @@ prepare()
 ```{r echo=FALSE}
 # add file-specific values here
 name <- "REPLACEME"
+source_synId <- "REPLACEME"
 old_synId <-  "REPLACEME" 
 new_synId <-  "REPLACEME"
 
 # not file-specific
+source_name <- paste(name, "source", sep="_")
 old_name <- paste(name, "old", sep="_")
 new_name <- paste(name, "new", sep="_")
 rules <- paste0("rules_", name)
@@ -31,6 +33,12 @@ cat( name, ".json", "\n", date(),
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 download_files(old_synId, new_synId, name)
 ```
+
+```{r}
+source <- download_file(source_synId, type = "REPLACEME") # file type: csv, tsv, json, f (feather)
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+```
+
 
 # Compared old & new files
 ```{r echo=FALSE}

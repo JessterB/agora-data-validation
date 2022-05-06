@@ -11,10 +11,9 @@ prepare()
 # Validation run metadata
 ```{r echo=FALSE}
 # file-specific
+name <- "gene_info"
 old_synId <-  "syn12548902" 
 new_synId <- "syn17015359" 
-
-name <- "gene_info"
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")
@@ -33,10 +32,11 @@ source("~/repos/rstudio/agora-data-validation/src/utils.R")
 download_files(old_synId, new_synId, name)
 ```
 
+
 # Compared old & new files
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare(get(old_name), get(new_name), name, summarize=FALSE)
+compare(get(old_name), get(new_name), name)
 ```
 
 ## Compare old & new subobjects
@@ -116,7 +116,7 @@ is_unique_fails
 
 
 ##  !is.na(summary): 5 fails
--> !is.na(summary): 42406 fails - spot check shows these were blank strings last time, nulls now seems fine
+-> !is.na(summary): 42406 fails - spot check shows these were blank strings before, nulls now, seems fine
 
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule

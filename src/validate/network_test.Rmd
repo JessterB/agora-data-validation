@@ -12,10 +12,9 @@ prepare()
 # Validation run metadata
 ```{r echo=FALSE}
 # file-specific
+name <- "network"
 old_synId <-  "syn12523173" 
 new_synId <- "syn17015361"
-
-name <- "network"
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")
@@ -37,7 +36,7 @@ download_files(old_synId, new_synId, name)
 # Compared old & new files
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare(get(old_name), get(new_name), name, summarize=FALSE)
+compare(get(old_name), get(new_name), nameE)
 ```
 
 

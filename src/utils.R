@@ -10,16 +10,12 @@ prepare <- function() {
     if (!require("sqldf")) { install.packages("sqldf") }
     if (!require("validate")) { install.packages("validate") }
     if (!require("arrow")) { install.packages("arrow") } 
-    if (!require("assertr")) { install.packages("assertr") } 
-    if (!require("assertr")) { install.packages("dplyr") }
     library(synapser)
     library(jsonlite)
     library(tidyverse)
     library(sqldf)
     library(validate)
     library(arrow)
-    library(assertr)
-    library(dplyr)
     synLogin()
   }
 
@@ -98,22 +94,17 @@ download_file <- function(synId, df_name, type = 'json', quiet = TRUE) {
 # - summarize  Whether to print out a summary() for each file
 
 # TODO this could be improved once our field names stabilize
-compare <- function(old, new, name, summarize = TRUE) {
+compare <- function(old, new, name) {
   cat("\nNumber of Records \n- old: ", nrow(old), "\n- new: ", nrow(new), "\nChange: ", nrow(new) - nrow(old))
   cat("\n\nNumber of Columns \n- old :", ncol(old), "\n- new: ", ncol(new), "\nChange: ", ncol(new) - ncol(old))
 
   old_cols <- colnames(old)
   new_cols <- colnames(new)
-  cat("\n\nOld Column Names", str_sort(old_cols), sep="\n- ")
-  cat("\nNew Column Names", str_sort(new_cols), sep="\n- ")
+  # cat("\n\nOld Column Names", str_sort(old_cols), sep="\n- ")
+  # cat("\nNew Column Names", str_sort(new_cols), sep="\n- ")
   
   cat("\n\nColumns dropped: ", setdiff(old_cols,new_cols), sep="\n- ")
   cat("\n\nColumns added: ", setdiff(new_cols,old_cols), sep="\n- ")
-  
-  if (summarize) {
-    cat(summarize(old, paste("old ", name)))
-    cat(summarize(new, paste("new ", name)))
-  }
 }
 
 # Compares the specified subobject in the specified pair of files
@@ -145,8 +136,8 @@ compare_subobjects <- function(old, new, subname_old, subname_new = subname_old)
   colnames_old <- colnames(old_subobj[[idx_old]])
   colnames_new <- colnames(new_subobj[[idx_new]])
   
-  cat("\n\nOld Column Names", str_sort(colnames_old), sep="\n- ")
-  cat("\nNew Column Names", str_sort(colnames_new), sep="\n- ")
+  #cat("\n\nOld Column Names", str_sort(colnames_old), sep="\n- ")
+  #cat("\nNew Column Names", str_sort(colnames_new), sep="\n- ")
   
   cat("\n\nColumns dropped: ", setdiff(colnames_old,colnames_new), sep="\n- ")
   cat("\n\nColumns added: ", setdiff(colnames_new,colnames_old), sep="\n- ")
