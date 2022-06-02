@@ -130,6 +130,22 @@ is_unique_fails
 gene_info_old[gene_info_old$ensembl_gene_id == "ENSG00000002933",]
 ```
 
+## AG-365 Missing/optional NT fields
+
+```{r}
+nominated_targets <- get_subobject(gene_info_new, "nominatedtarget")
+```
+
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(field_length(data_synapseid, min = 3, max = 25))
+cf <- confront(nominated_targets, v)
+out <- values(cf)
+is_unique_fails <- nominated_targets[!out,]
+is_unique_fails
+```
+
+
 
 ## AG-474: proteomics booleans
 
@@ -287,6 +303,15 @@ print(sum(met_matches))
 
 
 ## Misc investigations
+
+how many cohort studies?
+```{r}
+targets <- get_subobject(gene_info_old, "nominatedtarget")
+studies <- targets$study
+s <- as.list(unlist(strsplit(studies, '[[:space:]]')))
+unique(gsub(",","",s))
+```
+
 
 AG-168 - are the missing nominations in the new file??
 

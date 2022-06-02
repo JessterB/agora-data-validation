@@ -43,7 +43,7 @@ assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
 # Compared old & new files
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare(get(old_name), get(new_name), name, summarize=FALSE)
+compare(get(old_name), get(new_name), name)
 ```
 
 

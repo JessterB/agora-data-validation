@@ -65,3 +65,36 @@ is_unique_fails
 ```{r}
 srm <- download_file("syn25454540", type='csv')
 ```
+
+
+coverage stats
+```{r}
+nrow(srm_data_new) # 524
+peptide <- srm_data_new$uniprotac
+gene <- srm_data_new$hgnc_symbol
+srm_uid <- paste(gene, peptide, sep = "|")
+
+srm_uniq <- aggregate(srm_uid, by=list(srm_uid), FUN=length)
+```
+
+```{r}
+lfq_and_srm <- intersect(lfq_uid, srm_uid)
+lfq_not_srm <- setdiff(lfq_uid, srm_uid)
+srm_not_lfq <- setdiff(srm_uid, lfq_uid)
+
+
+length(lfq_and_srm) # 104
+length(lfq_not_srm) # 5572
+length(srm_not_lfq) # 124
+```
+
+```{r}
+tmt_and_srm <- intersect(tmt_uid, srm_uid)
+tmt_not_srm <- setdiff(tmt_uid, srm_uid)
+srm_not_tmt <- setdiff(srm_uid, tmt_uid)
+
+
+length(tmt_and_srm) # 
+length(tmt_not_srm) # 
+length(srm_not_tmt) # 
+```

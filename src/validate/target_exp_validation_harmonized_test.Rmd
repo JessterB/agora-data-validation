@@ -106,3 +106,12 @@ is this from the source data?
 ```{r}
 target_exp_validation_harmonized_source[target_exp_validation_harmonized_source$hgnc_symbol == "FC1 (mouse)",]
 ```
+
+
+## do we have missing data for Exp Val that we need to conditionalize header display to handle?
+```{r}
+#row <- target_exp_validation_harmonized_old[target_exp_validation_harmonized_old$ensembl_gene_id == 'ENSG00000178209',]
+#row$reference_doi
+
+sapply(target_exp_validation_harmonized_source, function(x) sum(x == "")
+```

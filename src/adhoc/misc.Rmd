@@ -10,6 +10,9 @@ prepare()
 
 
 
+
+
+
 ## missing nominated target fields
 ```{r}
 nominations_source <- download_file("syn12540368", type="csv")
@@ -171,5 +174,12 @@ ENSG00000064300	NGFR
 
 ```{r}
 gene_info_new[gene_info_new$ensembl_gene_id %in% c('ENSG00000130202', 'ENSG00000064300'),]
+
+```
+
+
+20 genes from adsp
+```{r}
+
 
 ```

@@ -1,0 +1,107 @@
+---
+title: "proteomics_distribution_data.json"
+output: html_notebook
+---
+
+```{r eval=FALSE, echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+prepare()
+```
+
+# Validation run metadata
+```{r echo=FALSE}
+# add file-specific values here
+name <- "proteomics_distribution_data"
+source_synId <- "syn18689335"
+old_synId <-  "syn31510062" # TODO update when we have a live data file
+new_synId <-  "syn31510062"
+
+# not file-specific
+source_name <- paste(name, "source", sep="_")
+old_name <- paste(name, "old", sep="_")
+new_name <- paste(name, "new", sep="_")
+rules <- paste0("rules_", name)
+
+# print validation summary
+cat( name, ".json", "\n", date(),
+    "\nold: ", old_synId, " \nnew: ", new_synId,
+    sep="")
+```
+
+# Downloaded files
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+download_files(old_synId, new_synId, name)
+```
+
+```{r}
+source <- download_file(source_synId, type = "csv") # file type: csv, tsv, json, f (feather)
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+```
+
+
+# Compared old & new files
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+compare(get(old_name), get(new_name), name)
+```
+
+
+# Validated new file against rules
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_proteomics_distribution_data.R")
+test(get(new_name), get(rules))
+```
+
+
+***
+# Validation failure investigations
+***
+
+
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(VALIDATION_RULE)
+cf <- confront(DATAFRAME, v)
+out <- values(cf)
+is_unique_fails <- DATAFRAME[!out,]
+is_unique_fails
+```
+
+
+
+Calculate distribution locally from source data and compare to processed distribution data
+
+```{r}
+tissues <- sort(unique(proteomics_new$tissue))
+
+for (tissue in tissues) {
+
+    tissue_rows <- proteomics_new[proteomics_new$tissue == tissue,]
+    tissue_lfc <- tissue_rows$log2_fc
+    
+    median <- median(tissue_lfc, na.rm = TRUE)
+    q1 <- quantile(tissue_lfc, c(0.25), na.rm = TRUE)
+    q3 <- quantile(tissue_lfc, c(0.75), na.rm = TRUE)
+    IQR <- q3 - q1
+    max <- q3 + (1.5 * IQR)
+    min <- q1 - (1.5 * IQR)
+    
+    
+    dist_tissue <- proteomics_distribution_data_new[proteomics_distribution_data_new$tissue == tissue,]
+    
+    tolerance <- 0.01
+    
+        cat("\n\nTissue:", tissue, 
+        "\nSource Data \tDistribution Data", "Diff within tolerance?",
+        "\n", min, "\t", dist_tissue$min, "\t", abs(min - dist_tissue$min) < tolerance,
+        "\n", q1, "\t", dist_tissue$first_quartile, "\t", abs(q1 - dist_tissue$first_quartile) < tolerance,
+        "\n", median, "\t", dist_tissue$median, "\t",abs(median - dist_tissue$median) < tolerance,
+        "\n", q3, "\t", dist_tissue$third_quartile, "\t", abs(q3 - dist_tissue$third_quartile) < tolerance,
+        "\n", max, "\t", dist_tissue$max, "\t", abs(max -dist_tissue$max) < tolerance
+        )
+
+  }
+
+```

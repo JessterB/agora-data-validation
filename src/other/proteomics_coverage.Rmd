@@ -1,0 +1,173 @@
+---
+title: "Proteomics coverage analysis"
+output: html_notebook
+---
+
+```{r eval=FALSE, echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+prepare()
+```
+
+# Validation run metadata
+```{r echo=FALSE}
+# add file-specific values here
+name <- "proteomics_diff"
+lfq_synId <-  "syn18689335"  
+tmt_synId <-  "syn28544692" 
+srm_synId <-  "syn25454540" 
+```
+
+# Downloaded files
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+lfq <- download_file(lfq_synId, type='csv')
+tmt <- download_file(tmt_synId, type='csv')
+srm <- download_file(srm_synId, type='csv')
+```
+
+
+
+## proteomic hgnc to ensg correctness (LFQ)
+
+join geneInfo to proteomics on ensembl_gene_id
+check if we get the same hgnc_symbol
+
+```{r}
+joined <- merge(x = proteomics_new, y = gene_info_new, by = "ensembl_gene_id")
+mismatch <- joined[joined$hgnc_symbol.x != joined$hgnc_symbol.y,]
+data.frame(mismatch$ensembl_gene_id, mismatch$hgnc_symbol.x, mismatch$hgnc_symbol.y)
+```
+
+
+--------
+Coverage
+--------
+
+## Identify the names of the columns necessary for comparing the three data sets
+```{r}
+head(lfq)
+head(tmt)
+head(srm)
+```
+
+LFQ: ENSG, UniqID 
+TMT: ENSG, Peptide 
+SRM: hgnc_symbol, hgnc_symbol + "|" + Peptide.Name (concatenate cols to emulate identifier) 
+
+
+## General characterization of the datasets
+```{r}
+# generate the gene|peptide identifier for srm rows
+srm$uid <- paste(srm$hgnc_symbol, "|", srm$UniProtAC, sep = "")
+
+# unique ENSG
+lfq_uniq_ensg <- aggregate(lfq$ENSG, by=list(lfq$ENSG), FUN=length)  # 4418
+tmt_uniq_ensg <- aggregate(tmt$ENSG, by=list(tmt$ENSG), FUN=length) # 8266
+
+# unique hgnc
+lfq_uniq_hgnc <- aggregate(lfq$GeneName, by=list(lfq$GeneName), FUN=length)  # 
+tmt_uniq_hgnc <- aggregate(tmt$GeneID, by=list(tmt$GeneID), FUN=length) # 
+srm_uniq_hgnc <- aggregate(srm$hgnc_symbol, by=list(srm$hgnc_symbol), FUN=length) # 
+
+# unique gene|peptide identifiers
+lfq_uniq <- aggregate(lfq$UniqID, by=list(lfq$UniqID), FUN=length) # 5676 * 4 = 22704 [DLPFC, MFG, TCX, AntPFC]
+tmt_uniq <- aggregate(tmt$Peptide, by=list(tmt$Peptide), FUN=length) # 8817
+srm_uniq <- aggregate(srm$uid, by=list(srm$uid), FUN=length) # 524
+
+cat("\nLFQ \n\trows:", nrow(lfq), "\n\tunique ENSG", nrow(lfq_uniq_ensg), "\n\tunique hgnc", nrow(lfq_uniq_hgnc), "\n\tunique peptides", nrow(lfq_uniq))
+cat("\nTMT \n\trows:", nrow(tmt), "\n\tunique ENSG", nrow(tmt_uniq_ensg), "\n\tunique hgnc", nrow(tmt_uniq_hgnc), "\n\tunique peptides", nrow(tmt_uniq))
+cat("\nSRM \n\trows:", nrow(srm), "\n\tunique ENSG", "---", "\n\tunique genes", nrow(srm_uniq_hgnc), "\n\tunique peptides", nrow(srm_uniq))
+```
+
+
+
+## Overlap
+```{r}
+install.packages("ggvenn")              
+library("ggvenn") 
+```
+
+by ENSG (not available for SRM data)
+```{r}
+ensg <- list('LFQ'=c(lfq$ENSG), 'TMT'=c(tmt$ENSG))
+ggvenn(ensg)
+
+```
+
+by hgnc|peptide identifier
+
+```{r}
+uniprot_lt <- list('LFQ'=c(lfq$UniqID), 'TMT'=c(tmt$Peptide))
+
+ggvenn(uniprot_lt)
+```
+
+
+by hgnc to include SRM
+```{r}
+hgnc <- list('LFQ'=c(lfq$GeneName), 'TMT'=c(tmt$GeneID), 'SRM'=c(srm$hgnc_symbol))
+
+ggvenn(hgnc)
+
+```
+
+by hgnc|peptide identifier w/SRM
+
+```{r}
+uniprot_lts <- list('LFQ'=c(lfq$UniqID), 'TMT'=c(tmt$Peptide), 'SRM'=c(srm$uid))
+
+ggvenn(uniprot_lts)
+```
+
+```{r}
+genes <- intersect(srm$hgnc_symbol, tmt$GeneID) # gene names that overlap in the smaller datasets
+  
+lfq_genes <- lfq[lfq$GeneName %in% genes,]
+tmt_genes <- tmt[tmt$GeneID %in% genes,]
+srm_genes <- srm[srm$hgnc_symbol%in% genes,]
+
+lfq_genes[order(lfq_genes$GeneName), ]
+tmt_genes[order(tmt_genes$GeneID), ]
+srm_genes[order(srm_genes$hgnc_symbol), ]
+```
+
+
+
+```{r}
+lfq_uid <- lfq$UniqID
+tmt_uid <- tmt$Peptide # 8817 peptides
+
+cat("\nLFQ total rows", length(lfq_uid)) # 22704 peptides
+cat("\nTMT total rows", length(tmt_uid)) # 8817 peptides
+
+cat("\nLFQ unique peptides", length(unique(lfq_uid))) # 5676 unique peptides
+cat("\nTMT unique peptides", length(unique(tmt_uid))) # 8817 unique peptides
+
+shared <- intersect(lfq_uid, tmt_uid)
+lfq_not_tmt <- setdiff(lfq_uid, tmt_uid)
+tmt_not_lfq <- setdiff(tmt_uid, lfq_uid)
+
+
+cat("\nTMT and LFQ", length(shared)) # 3253 genes have both tmt and lfq data
+cat("\nLFQ only", length(lfq_not_tmt)) # 2423 genes have tmt data only
+cat("\nTMT only", length(tmt_not_lfq)) # 5564 genes have lfq data only
+```
+
+```{r}
+lfq[lfq$ENSG == 'ENSG00000175416',]
+tmt[tmt$ENSG == 'ENSG00000175416',]
+
+lfq[lfq$UniqID == 'CLTB|P09497-2',]
+tmt[tmt$Peptide == 'CLTB|P09497-2',]
+```
+
+
+overlap by gene
+
+```{r}
+lfq_uniq_ensg <- aggregate(lfq$ENSG, by=list(lfq$ENSG), FUN=length)  # 4418
+tmt_uniq_ensg <- aggregate(tmt$ENSG, by=list(tmt$ENSG), FUN=length) # 8266
+
+hist(lfq_uniq_ensg$x)
+hist(tmt_uniq_ensg$x)
+```
