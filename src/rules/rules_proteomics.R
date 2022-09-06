@@ -15,8 +15,6 @@ rules_proteomics <- validator(
   !is.na(ensembl_gene_id),
   field_length(ensembl_gene_id, n=15),
   
-  
-  
   # hgnc_gene_id
   is.character(hgnc_symbol),
   !is.na(hgnc_symbol),

@@ -13,7 +13,7 @@ prepare()
 # file-specific
 name <- "metabolomics"
 source_synId <- "syn26064497"
-old_synId <-  "syn19315964" 
+old_synId <-  "syn19315964"
 new_synId <- "syn19276330" 
 
 # not file-specific
@@ -60,7 +60,6 @@ test(get(new_name), get(rules))
 Spot checking of the source data indicates that these duplicates are not created by our processing; note that the dups do have unique ENSGs:
 
 * is_unique(associated_gene_name): 438 fails
-
 * is_unique(associated_gene_name, metabolite_id): 231 fails
 
 ***
@@ -198,4 +197,10 @@ metabolomics_source[metabolomics_source$associated_gene_name == "C17orf100",]
 
 ```{r}
 metabolomics_source[metabolomics_source$associated_gene_name == "CRIP1",]
+```
+
+Upper case metabolite names maybe (y-axis label)?
+```{r}
+metabolomics_new[metabolomics_new$metabolite_full_name == "Ornithine",]
+metabolomics_new$metabolite_full_name
 ```

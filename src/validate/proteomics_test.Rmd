@@ -195,3 +195,102 @@ sum(is.na(proteomics_source$CI_Upr))
 ```{r}
 sum(is.na(proteomics_source$CI_Lwr))
 ```
+
+
+***
+# Other Validation
+***
+
+# l2fc characteristics (opacity and diameter tuning)
+```{r}
+l2fc <- proteomics_new$log2_fc
+max <- max(l2fc)
+min <- min(l2fc)
+sd <- sd(l2fc)
+cat(max, min, sd)
+```
+
+# l2fc and pval distributions (opacity and diameter tuning)
+
+```{r}
+l2fc <- proteomics_new$log2_fc
+negatives <- l2fc[l2fc < 0]
+positives <- l2fc[l2fc > 0]
+sd <- sd(l2fc)
+#sd <- 0.1467328 #rna sd
+smalls <- l2fc[l2fc < -sd]
+bigs <- l2fc[l2fc > sd]
+small_range <- smalls[smalls > -(sd*2)]
+big_range <- bigs[bigs < (sd*2)]
+hist(l2fc)
+hist(smalls)
+hist(bigs)
+hist(small_range)
+hist(big_range)
+cat("total negative:", length(negatives), "total positive:", length(positives), "interesting negatives", length(small_range), "interesting positives", length(big_range))
+```
+tuning
+tuning
+```{r}
+l2fc <- proteomics_new$log2_fc
+negatives <- l2fc[l2fc < 0]
+positives <- l2fc[l2fc > 0]
+
+low <- 0.1
+high <- 0.5
+
+purple_range <- l2fc[l2fc >= -high]
+purple_range <- purple_range[purple_range <= -low]
+
+# in range
+length(purple_range)
+length(purple_range)/length(negatives)
+#min(purple_range)
+#max(purple_range)
+
+# out of range
+high_purples <- negatives[negatives < -high]
+low_purples <- negatives[negatives > -low]
+length(high_purples)
+length(high_purples)/length(negatives)
+length(low_purples)
+length(low_purples)/length(negatives)
+
+green_range <- l2fc[l2fc >= low]
+green_range <- green_range[green_range <= high]
+
+# in range
+length(green_range)
+length(green_range)/length(positives)
+#min(green_range)
+#max(green_range)
+
+# out of range
+high_greens <- positives[positives > high]
+low_greens <- positives[positives < low]
+length(high_greens)
+length(high_greens)/length(positives)
+length(low_greens)
+length(low_greens)/length(positives)
+```
+
+
+use 1.5IQR to eliminate outliers?
+```{r}
+l2fc <- rna_seq_differential_expression_new$logfc
+median <- median(l2fc)
+q1 <- quantile(l2fc, c(0.25), names = FALSE)
+q3 <- quantile(l2fc, c(0.75), names = FALSE)
+IQR <- q3 - q1
+max <- q3 + (1.5 * IQR)
+min <- q1 - (1.5 * IQR)
+
+cat(min, q1, median, q3, max)
+
+```
+
+
+Boolean flip investigation
+```{r}
+proteomics_new[proteomics_new$ensembl_gene_id == 'ENSG00000134684',]
+```

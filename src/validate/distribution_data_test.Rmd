@@ -3,6 +3,8 @@ title: "distribution_data.json"
 output: html_notebook
 ---
 
+NOTE: Agora 3.0.x is pinned to Live v5 for now; live v6 has problems and shouldn't be released or compared to
+
 ```{r eval=FALSE, echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 prepare()
@@ -12,13 +14,20 @@ prepare()
 ```{r echo=FALSE}
 # add file-specific values here
 name <- "distribution_data"
-old_synId <-  "syn26274945" 
+source_synId <- "syn25575156"
+old_synId <-  "syn26274945"
 new_synId <- "syn27572407"
+
+# score-type specific rules files
+genetics_rules <- paste0("rules_", name, "_genetics")
+omics_rules <- paste0("rules_", name, "_omics")
+lit_rules <- paste0("rules_", name, "_lit")
+overall_rules <- paste0("rules_", name, "_overall")
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")
 new_name <- paste(name, "new", sep="_")
-rules <- paste0("rules_", name)
+rules <- paste0("rules_", name) # unused for this file
 
 # print validation summary
 cat( name, ".json", "\n", date(),
@@ -31,6 +40,11 @@ cat( name, ".json", "\n", date(),
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 download_files(old_synId, new_synId, name)
 ```
+```{r}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+source <- download_file(source_synId, type = "table")
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+```
 
 # Compared old & new files
 ```{r echo=FALSE}
@@ -42,10 +56,22 @@ compare(get(old_name), get(new_name), name)
 # Validated new file against rules
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-source("~/repos/rstudio/agora-data-validation/src/rules/rules_distribution_data.R")
-test(get(new_name), get(rules))
-```
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_distribution_data_genetics.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_distribution_data_omics.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_distribution_data_lit.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_distribution_data_overall.R")
 
+# extract nested score-specific distribution data as dataframes
+GeneticsScores <- distribution_data_new[, "GeneticsScore"]
+OmicsScores <- distribution_data_new[, "OmicsScore"]
+LitScores <- distribution_data_new[, "LiteratureScore"]
+OverallScores <- distribution_data_new[, "Logsdon"]
+
+test(GeneticsScores, get(genetics_rules))
+test(OmicsScores, get(omics_rules))
+test(LitScores, get(lit_rules))
+test(OverallScores, get(overall_rules))
+```
 
 ***
 # Outstanding validation failures
@@ -65,9 +91,223 @@ is_unique_fails <- DATAFRAME[!out,]
 is_unique_fails
 ```
 
+
+# LiteratureScore.distribution - 0 >= -1e-08: 1 fail (Testing v15)
+```{r echo=FALSE}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(LiteratureScore.distribution - 0 >= -1e-08)
+cf <- confront(distribution_data_new, v)
+out <- values(cf)
+is_unique_fails <- distribution_data_new[!out,]
+is_unique_fails
+```
+
+# Logsdon.bins.1 - 0 >= -1e-08: 1 fail (Testing v15)
+```{r echo=FALSE}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(Logsdon.bins.1 - 0 >= -1e-08)
+cf <- confront(distribution_data_new, v)
+out <- values(cf)
+is_unique_fails <- distribution_data_new[!out,]
+is_unique_fails
+```
+
+# Logsdon.bins.2 - 0 >= -1e-08: 1 fail (Testing v15)
+```{r echo=FALSE}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(Logsdon.bins.2 - 0 >= -1e-08)
+cf <- confront(distribution_data_new, v)
+out <- values(cf)
+is_unique_fails <- distribution_data_new[!out,]
+is_unique_fails
+```
+
 ***
 # Other validation
 ***
+
+## Lit score empty top bin issue (See AG-827 comments)
+The transform logic was returning distributions sorted by value (highest to lowest)
+The application was assuming the distributions were sorted by bin ordering
+I think that this means we have been presenting inaccurate histograms in Agora for all score types :(
+The solution is to add a sort=false parameter to the value_counts call in calculate_distribution
+
+Expected distributions:
+```{r}
+overall_only <- distribution_data_source %>% select(ENSG, Overall)
+overall_only[nrow(overall_only) + 1,] = c("max", 5)
+overall_only$Overall <- as.numeric(overall_only$Overall)
+
+genetics_scored <- distribution_data_source[distribution_data_source$isScored_genetics == 'Y',]
+genetics_only <- genetics_scored %>% select(ENSG, GeneticsScore)
+genetics_only[nrow(genetics_only) + 1,] = c("max", 3)
+genetics_only$GeneticsScore <- as.numeric(genetics_only$GeneticsScore)
+
+omics_scored <- distribution_data_source[distribution_data_source$isScored_omics == 'Y',]
+omics_only <- omics_scored %>% select(ENSG, OmicsScore)
+omics_only[nrow(omics_only) + 1,] = c("max", 2)
+omics_only$OmicsScore <- as.numeric(omics_only$OmicsScore)
+
+lit_scored <- distribution_data_source[distribution_data_source$isScored_lit == 'Y',]
+lit_only <- lit_scored %>% select(ENSG, LiteratureScore)
+lit_only[nrow(lit_only) + 1,] = c("max", 2)
+lit_only$LiteratureScore <- as.numeric(lit_only$LiteratureScore)
+
+overall_binned <- overall_only %>% mutate(overall_bin = cut(Overall, breaks=10))
+genetics_binned <- genetics_only %>% mutate(genetics_bin = cut(GeneticsScore, breaks=10))
+omics_binned <- omics_only %>% mutate(omics_bin = cut(OmicsScore, breaks=10))
+lit_binned <- lit_only %>% mutate(lit_bin = cut(LiteratureScore, breaks=10))
+
+# expected no genes per bin
+overall_bins <- unique(overall_binned$overall_bin)
+cat('Overall\n')
+cat('bin 1: ', sum(overall_binned$overall_bin == '(-0.005,0.5]'), '\n')
+cat('bin 2: ', sum(overall_binned$overall_bin == '(0.5,1]'), '\n')
+cat('bin 3: ', sum(overall_binned$overall_bin == '(1,1.5]'), '\n')
+cat('bin 4: ', sum(overall_binned$overall_bin == '(1.5,2]'), '\n')
+cat('bin 5: ', sum(overall_binned$overall_bin == '(2,2.5]'), '\n')
+cat('bin 6: ', sum(overall_binned$overall_bin == '(2.5,3]'), '\n')
+cat('bin 7: ', sum(overall_binned$overall_bin == '(3,3.5]'), '\n')
+cat('bin 8: ', sum(overall_binned$overall_bin == '(3.5,4]'), '\n')
+cat('bin 9: ', sum(overall_binned$overall_bin == '(4,4.5]'), '\n')
+cat('bin 10: ', sum(overall_binned$overall_bin == '(4.5,5]')- 1, '\n')
+
+genetics_bins <- unique(genetics_binned$genetics_bin)
+cat('Genetics\n')
+cat('bin 1: ', sum(genetics_binned$genetics_bin == '(-0.003,0.3]'), '\n')
+cat('bin 2: ', sum(genetics_binned$genetics_bin == '(0.3,0.6]'), '\n')
+cat('bin 3: ', sum(genetics_binned$genetics_bin == '(0.6,0.9]'), '\n')
+cat('bin 4: ', sum(genetics_binned$genetics_bin == '(0.9,1.2]'), '\n')
+cat('bin 5: ', sum(genetics_binned$genetics_bin == '(1.2,1.5]'), '\n')
+cat('bin 6: ', sum(genetics_binned$genetics_bin == '(1.5,1.8]'), '\n')
+cat('bin 7: ', sum(genetics_binned$genetics_bin == '(1.8,2.1]'), '\n')
+cat('bin 8: ', sum(genetics_binned$genetics_bin == '(2.1,2.4]'), '\n')
+cat('bin 9: ', sum(genetics_binned$genetics_bin == '(2.4,2.7]'), '\n')
+cat('bin 10: ', sum(genetics_binned$genetics_bin == '(2.7,3]')- 1, '\n')
+
+omics_bins <- unique(omics_binned$omics_bin)
+cat('Omics\n')
+cat('bin 1: ', sum(omics_binned$omics_bin == '(-0.002,0.2]'), '\n')
+cat('bin 2: ', sum(omics_binned$omics_bin == '(0.2,0.4]'), '\n')
+cat('bin 3: ', sum(omics_binned$omics_bin == '(0.4,0.6]'), '\n')
+cat('bin 4: ', sum(omics_binned$omics_bin == '(0.6,0.8]'), '\n')
+cat('bin 5: ', sum(omics_binned$omics_bin == '(0.8,1]'), '\n')
+cat('bin 6: ', sum(omics_binned$omics_bin == '(1,1.2]'), '\n')
+cat('bin 7: ', sum(omics_binned$omics_bin == '(1.2,1.4]'), '\n')
+cat('bin 8: ', sum(omics_binned$omics_bin == '(1.4,1.6]'), '\n')
+cat('bin 9: ', sum(omics_binned$omics_bin == '(1.6,1.8]'), '\n')
+cat('bin 10: ', sum(omics_binned$omics_bin == '(1.8,2]')- 1,  '\n')
+
+
+lit_bins <- unique(lit_binned$lit_bin)
+cat('Literature\n')
+cat('bin 1: ', sum(lit_binned$lit_bin == '(-0.002,0.2]'), '\n')
+cat('bin 2: ', sum(lit_binned$lit_bin == '(0.2,0.4]'), '\n')
+cat('bin 3: ', sum(lit_binned$lit_bin == '(0.4,0.6]'), '\n')
+cat('bin 4: ', sum(lit_binned$lit_bin == '(0.6,0.8]'), '\n')
+cat('bin 5: ', sum(lit_binned$lit_bin == '(0.8,1]'), '\n')
+cat('bin 6: ', sum(lit_binned$lit_bin == '(1,1.2]'), '\n')
+cat('bin 7: ', sum(lit_binned$lit_bin == '(1.2,1.4]'), '\n')
+cat('bin 8: ', sum(lit_binned$lit_bin == '(1.4,1.6]'), '\n')
+cat('bin 9: ', sum(lit_binned$lit_bin == '(1.6,1.8]'), '\n')
+cat('bin 10: ', sum(lit_binned$lit_bin == '(1.8,2]')- 1, '\n')
+```
+
+Did this impact our old distributions too?
+```{r}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+source <- download_file(old_source_synId, type = "table")
+assign(paste(name, "source_old", sep="_"), source, envir = .GlobalEnv)
+```
+Expected old distributions:
+The expected distributions do not match what is in the app today, so same bug :(
+```{r}
+overall_fn <- distribution_data_source_old %>% select(ENSG, Overall, FlyNeuroPathScore)
+overall_fn$Overall <- overall_fn$Overall - overall_fn$FlyNeuroPathScore
+overall_only <- overall_fn %>% select(ENSG, Overall)
+overall_only[nrow(overall_only) + 1,] = c("max", 7)
+overall_only[nrow(overall_only) + 1,] = c("min", 0)
+overall_only$Overall <- as.numeric(overall_only$Overall)
+
+genetics_scored <- distribution_data_source_old[distribution_data_source_old$isScored_genetics == 'Y',]
+genetics_only <- genetics_scored %>% select(ENSG, GeneticsScore)
+genetics_only[nrow(genetics_only) + 1,] = c("max", 3)
+genetics_only[nrow(genetics_only) + 1,] = c("min", 0)
+genetics_only$GeneticsScore <- as.numeric(genetics_only$GeneticsScore)
+
+omics_scored <- distribution_data_source_old[distribution_data_source_old$isScored_omics == 'Y',]
+omics_only <- omics_scored %>% select(ENSG, OmicsScore)
+omics_only[nrow(omics_only) + 1,] = c("max", 2)
+omics_only[nrow(omics_only) + 1,] = c("min", 0)
+omics_only$OmicsScore <- as.numeric(omics_only$OmicsScore)
+
+lit_scored <- distribution_data_source_old[distribution_data_source_old$isScored_lit == 'Y',]
+lit_only <- lit_scored %>% select(ENSG, LiteratureScore)
+lit_only[nrow(lit_only) + 1,] = c("max", 2)
+lit_only[nrow(lit_only) + 1,] = c("min", 0)
+lit_only$LiteratureScore <- as.numeric(lit_only$LiteratureScore)
+
+overall_binned <- overall_only %>% mutate(overall_bin = cut(Overall, breaks=10))
+genetics_binned <- genetics_only %>% mutate(genetics_bin = cut(GeneticsScore, breaks=10))
+omics_binned <- omics_only %>% mutate(omics_bin = cut(OmicsScore, breaks=10))
+lit_binned <- lit_only %>% mutate(lit_bin = cut(LiteratureScore, breaks=10))
+
+# expected no genes per bin
+overall_bins <- unique(overall_binned$overall_bin)
+cat('Overall\n')
+cat('bin 1: ', sum(overall_binned$overall_bin == '(-0.007,0.7]') - 1, '\n')
+cat('bin 2: ', sum(overall_binned$overall_bin == '(0.7,1.4]'), '\n')
+cat('bin 3: ', sum(overall_binned$overall_bin == '(1.4,2.1]'), '\n')
+cat('bin 4: ', sum(overall_binned$overall_bin == '(2.1,2.8]'), '\n')
+cat('bin 5: ', sum(overall_binned$overall_bin == '(2.8,3.5]'), '\n')
+cat('bin 6: ', sum(overall_binned$overall_bin == '(3.5,4.2]'), '\n')
+cat('bin 7: ', sum(overall_binned$overall_bin == '(4.2,4.9]'), '\n')
+cat('bin 8: ', sum(overall_binned$overall_bin == '(4.9,5.6]'), '\n')
+cat('bin 9: ', sum(overall_binned$overall_bin == '(5.6,6.3]'), '\n')
+cat('bin 10: ', sum(overall_binned$overall_bin == '(6.3,7.01]')- 1, '\n')
+
+genetics_bins <- unique(genetics_binned$genetics_bin)
+cat('Genetics\n')
+cat('bin 1: ', sum(genetics_binned$genetics_bin == '(-0.003,0.3]') - 1, '\n')
+cat('bin 2: ', sum(genetics_binned$genetics_bin == '(0.3,0.6]'), '\n')
+cat('bin 3: ', sum(genetics_binned$genetics_bin == '(0.6,0.9]'), '\n')
+cat('bin 4: ', sum(genetics_binned$genetics_bin == '(0.9,1.2]'), '\n')
+cat('bin 5: ', sum(genetics_binned$genetics_bin == '(1.2,1.5]'), '\n')
+cat('bin 6: ', sum(genetics_binned$genetics_bin == '(1.5,1.8]'), '\n')
+cat('bin 7: ', sum(genetics_binned$genetics_bin == '(1.8,2.1]'), '\n')
+cat('bin 8: ', sum(genetics_binned$genetics_bin == '(2.1,2.4]'), '\n')
+cat('bin 9: ', sum(genetics_binned$genetics_bin == '(2.4,2.7]'), '\n')
+cat('bin 10: ', sum(genetics_binned$genetics_bin == '(2.7,3]')- 1, '\n')
+
+omics_bins <- unique(omics_binned$omics_bin)
+cat('Omics\n')
+cat('bin 1: ', sum(omics_binned$omics_bin == '(-0.002,0.2]') - 1, '\n')
+cat('bin 2: ', sum(omics_binned$omics_bin == '(0.2,0.4]'), '\n')
+cat('bin 3: ', sum(omics_binned$omics_bin == '(0.4,0.6]'), '\n')
+cat('bin 4: ', sum(omics_binned$omics_bin == '(0.6,0.8]'), '\n')
+cat('bin 5: ', sum(omics_binned$omics_bin == '(0.8,1]'), '\n')
+cat('bin 6: ', sum(omics_binned$omics_bin == '(1,1.2]'), '\n')
+cat('bin 7: ', sum(omics_binned$omics_bin == '(1.2,1.4]'), '\n')
+cat('bin 8: ', sum(omics_binned$omics_bin == '(1.4,1.6]'), '\n')
+cat('bin 9: ', sum(omics_binned$omics_bin == '(1.6,1.8]'), '\n')
+cat('bin 10: ', sum(omics_binned$omics_bin == '(1.8,2]')- 1,  '\n')
+
+
+lit_bins <- unique(lit_binned$lit_bin)
+cat('Literature\n')
+cat('bin 1: ', sum(lit_binned$lit_bin == '(-0.002,0.2]') - 1, '\n')
+cat('bin 2: ', sum(lit_binned$lit_bin == '(0.2,0.4]'), '\n')
+cat('bin 3: ', sum(lit_binned$lit_bin == '(0.4,0.6]'), '\n')
+cat('bin 4: ', sum(lit_binned$lit_bin == '(0.6,0.8]'), '\n')
+cat('bin 5: ', sum(lit_binned$lit_bin == '(0.8,1]'), '\n')
+cat('bin 6: ', sum(lit_binned$lit_bin == '(1,1.2]'), '\n')
+cat('bin 7: ', sum(lit_binned$lit_bin == '(1.2,1.4]'), '\n')
+cat('bin 8: ', sum(lit_binned$lit_bin == '(1.4,1.6]'), '\n')
+cat('bin 9: ', sum(lit_binned$lit_bin == '(1.6,1.8]'), '\n')
+cat('bin 10: ', sum(lit_binned$lit_bin == '(1.8,2]')- 1, '\n')
+```
+
+
 
 ## Distribution validation
 
@@ -87,3 +327,19 @@ cat("\n\nGenetics distribution total genes: ", sum(distribution_data_new$Genetic
 cat("\nGenetics total genes expected: ", "23319") # from overall_scores_test.json
 ```
 
+## Hackery to work around structure change (to compare v5 to later versions)
+download the 'new' file and edit it to make it a list of objects instead of one big object to allow comparison with previous versions and validate with existing rules (until we move past this awkward phase...)
+```{r}
+modified_path <- "/Users/jbritton/repos/rstudio/agora-data-validation/src/validate/files/distribution_data(22).json"
+distribution_data_new <- as.data.frame(fromJSON(modified_path))
+```
+
+
+diff -> all rows are different
+
+```{r}
+
+sqldf('SELECT * FROM distribution_data_new EXCEPT SELECT * FROM distribution_data_old')
+sqldf('SELECT * FROM distribution_data_new INTERSECT SELECT * FROM distribution_data_old')
+
+```

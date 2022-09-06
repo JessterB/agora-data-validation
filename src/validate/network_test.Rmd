@@ -36,7 +36,7 @@ download_files(old_synId, new_synId, name)
 # Compared old & new files
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare(get(old_name), get(new_name), nameE)
+compare(get(old_name), get(new_name), name)
 ```
 
 

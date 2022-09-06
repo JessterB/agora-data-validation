@@ -12,7 +12,7 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 source_synId <- "syn27211942" # tsv
-old_synId <-  "syn12177499" 
+old_synId <-  "syn12177499.32" 
 new_synId <- "syn17015360" 
 
 name <- "rna_seq_differential_expression"
@@ -44,7 +44,6 @@ assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 compare(get(old_name), get(new_name), name)
 ```
-
 
 # Validated new file against rules
 ```{r echo=FALSE}

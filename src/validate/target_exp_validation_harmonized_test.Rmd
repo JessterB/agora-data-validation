@@ -115,3 +115,8 @@ target_exp_validation_harmonized_source[target_exp_validation_harmonized_source$
 
 sapply(target_exp_validation_harmonized_source, function(x) sum(x == "")
 ```
+
+
+```{r}
+target_exp_validation_harmonized_new[target_exp_validation_harmonized_new$ensembl_gene_id == 'ENSG00000138741',]
+```

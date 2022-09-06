@@ -13,7 +13,7 @@ prepare()
 # add file-specific values here
 name <- "proteomics_distribution_data"
 source_synId <- "syn18689335"
-old_synId <-  "syn31510062" # TODO update when we have a live data file
+old_synId <-  "syn31808319" 
 new_synId <-  "syn31510062"
 
 # not file-specific
@@ -73,6 +73,35 @@ is_unique_fails
 
 Calculate distribution locally from source data and compare to processed distribution data
 
+
+TMT
+```{r}
+    tissue_lfc <- proteomics_tmt_new$log2_fc
+    
+    median <- median(tissue_lfc, na.rm = TRUE)
+    q1 <- quantile(tissue_lfc, c(0.25), na.rm = TRUE)
+    q3 <- quantile(tissue_lfc, c(0.75), na.rm = TRUE)
+    IQR <- q3 - q1
+    max <- q3 + (1.5 * IQR)
+    min <- q1 - (1.5 * IQR)
+    
+    
+    dist_tissue <- proteomics_distribution_data_new[proteomics_distribution_data_new$type == 'TMT',]
+    
+    tolerance <- 0.01
+    
+        cat(
+        "\nSource Data \tDistribution Data", "Diff within tolerance?",
+        "\n", min, "\t", dist_tissue$min, "\t", abs(min - dist_tissue$min) < tolerance,
+        "\n", q1, "\t", dist_tissue$first_quartile, "\t", abs(q1 - dist_tissue$first_quartile) < tolerance,
+        "\n", median, "\t", dist_tissue$median, "\t",abs(median - dist_tissue$median) < tolerance,
+        "\n", q3, "\t", dist_tissue$third_quartile, "\t", abs(q3 - dist_tissue$third_quartile) < tolerance,
+        "\n", max, "\t", dist_tissue$max, "\t", abs(max -dist_tissue$max) < tolerance
+        )
+```
+
+LFQ
+
 ```{r}
 tissues <- sort(unique(proteomics_new$tissue))
 
@@ -88,8 +117,8 @@ for (tissue in tissues) {
     max <- q3 + (1.5 * IQR)
     min <- q1 - (1.5 * IQR)
     
-    
-    dist_tissue <- proteomics_distribution_data_new[proteomics_distribution_data_new$tissue == tissue,]
+    lfq_dists <- proteomics_distribution_data_new[proteomics_distribution_data_new$type == 'LFQ',]
+    dist_tissue <- lfq_dists[lfq_dists$tissue == tissue,]
     
     tolerance <- 0.01
     

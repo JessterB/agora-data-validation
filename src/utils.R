@@ -63,7 +63,10 @@ download_file <- function(synId, df_name, type = 'json', quiet = TRUE) {
   } 
 
   if (type == 'table') { 
-    sel_statement <- paste("SELECT * FROM", id_parts[[1]][1], version = version_value, collapse=" ")
+    # TODO figure out how to download specific table version
+    #sel_statement <- paste("SELECT * FROM", id_parts[[1]][1], version = version_value, collapse=" ")
+    sel_statement <- paste("SELECT * FROM", synId, collapse=" ")
+    print(sel_statement)
     file <- synTableQuery(sel_statement, resultsAs='csv')
     path <- file$filepath
   } else {
@@ -74,7 +77,8 @@ download_file <- function(synId, df_name, type = 'json', quiet = TRUE) {
   
   # TODO are there other metadata values worth printing out here?
   cat("\nDownload on:  ", date())
-  cat("\n", synId, "\n- Modified on ", file$properties$modifiedOn, "\n- Version ", file$properties$versionNumber, "\n")
+  cat("\n", synId, "\n- Modified on ", file$properties$modifiedOn, "\n- Version ", file$properties$versionNumber)
+  cat("\npath: ", file$path, "\n")
 
   if (type == 'f') { 
     data <- read_feather(path)
@@ -95,6 +99,11 @@ download_file <- function(synId, df_name, type = 'json', quiet = TRUE) {
 
 # TODO this could be improved once our field names stabilize
 compare <- function(old, new, name) {
+  identical <- identical(old, new)
+  equal <- all.equal(old, new)
+  cat("is identical:", identical, "\n")
+  cat("is equal (1.5e-8 tolerance):", equal, sep="\n")
+  
   cat("\nNumber of Records \n- old: ", nrow(old), "\n- new: ", nrow(new), "\nChange: ", nrow(new) - nrow(old))
   cat("\n\nNumber of Columns \n- old :", ncol(old), "\n- new: ", ncol(new), "\nChange: ", ncol(new) - ncol(old))
 
@@ -126,6 +135,8 @@ compare_subobjects <- function(old, new, subname_old, subname_new = subname_old)
     }
   }
   
+  # TODO update this to try to pull the same gene's subobject for better comparison
+  
   for (j in 1:length(new_subobj)) {
     if (class(new_subobj[[j]]) == "data.frame") {
       idx_new <- j
@@ -141,6 +152,8 @@ compare_subobjects <- function(old, new, subname_old, subname_new = subname_old)
   
   cat("\n\nColumns dropped: ", setdiff(colnames_old,colnames_new), sep="\n- ")
   cat("\n\nColumns added: ", setdiff(colnames_new,colnames_old), sep="\n- ")
+  
+  cat("is identical:", identical(old_subobj, new_subobj))
 }
 
 

@@ -9,6 +9,8 @@ renv/
 *.Rproj
 .Rproj.user
 *.knit.md
+*/.DS_Store
+.DS_Store
 
 
 # unarchived html files

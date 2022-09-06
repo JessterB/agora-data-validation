@@ -68,6 +68,37 @@ colnames(tmt_source)
 ```
 
 
+## TMT vs LFQ uniprot IDs - how aligned are they? (one dropdown or two on details page??)
+spot checks on a few disjointed uniprot IDs showed that they have unique proteins, one dropdown should be ok?
+```{r}
+lfq <- proteomics_old
+tmt <-proteomics_tmt_old
+
+# merge(x = df1, y = df2, by = "CustomerId", all = TRUE)
+joined <- merge(x = lfq, y = tmt, by = "ensembl_gene_id", all = TRUE)
+
+keeps <- c("ensembl_gene_id", "uniprotid.x", "uniprotid.y", "hgnc_symbol.x", "hgnc_symbol.y")
+results <- joined[keeps]
+results2 <- results[results$'uniprotid.x' != results$'uniprotid.y',]
+results2[complete.cases(results2),]
+```
+
+## CI axes for supertable overlay
+
+```{r}
+lfq_ci_upr_max <- max(proteomics_new$ci_upr, na.rm=T)
+lfq_ci_lwr_min <- min(proteomics_new$ci_lwr, na.rm=T)
+tmt_ci_upr_max <- max(proteomics_tmt_new$ci_upr, na.rm=T)
+tmt_ci_lwr_min <- min(proteomics_tmt_new$ci_lwr, na.rm=T)
+rna_ci_upr_max <- max(rna_seq_differential_expression_new$ci_r, na.rm=T)
+rna_ci_lwr_min <- min(rna_seq_differential_expression_new$ci_l, na.rm=T)
+
+cat("lfq ci upper max:", lfq_ci_upr_max, "\nlfq ci lwr min:", lfq_ci_lwr_min,
+    "\ntmt ci upper max:", tmt_ci_upr_max, "\ntmt ci lwr min:", tmt_ci_lwr_min,
+    "\nrna ci upper max", rna_ci_upr_max, "\nrna ci lwr min:", rna_ci_lwr_min)
+```
+
+## Misc
 
 genes with no ME but have DE?
 
@@ -121,6 +152,9 @@ unique_hgnc <- unique(hgnc$ensembl_gene_id)
 print(hgnc[order(hgnc$hgnc_symbol),])
 print(unique_hgnc)
 ```
+
+
+
 ```{r}
 hgnc[hgnc$ensembl_gene_id == 'ENSG00000273036',]
 ```
@@ -177,6 +211,12 @@ gene_info_new[gene_info_new$ensembl_gene_id %in% c('ENSG00000130202', 'ENSG00000
 
 ```
 
+```{r}
+# x is geneInfo, y is proteomics
+df1 <- data.frame("ensembl_gene_id" = gene_info_new$ensembl_gene_id, "hgnc_symbol" = gene_info_new$hgnc_symbol)
+df2 <- data.frame("ensembl_gene_id" = proteomics_new$ensembl_gene_id, "hgnc_symbol" = proteomics_new$hgnc_symbol)
+merge(x = df1, y = df2, by = "ensembl_gene_id", all = TRUE)
+```
 
 20 genes from adsp
 ```{r}

@@ -12,6 +12,7 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 name <- "gene_info"
+source_synId <- "syn12540368" #harmonized_targets - TODO other source files
 old_synId <-  "syn12548902" 
 new_synId <- "syn17015359" 
 
@@ -26,12 +27,16 @@ cat( name, ".json", "\nReported on:  ", date(),
     sep="")
 ```
 
-# Downloaded files
+# Downloaded files to compare
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 download_files(old_synId, new_synId, name)
 ```
-
+# Download source files
+```{r}
+source <- download_file(source_synId, type = "csv") 
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+```
 
 # Compared old & new files
 ```{r echo=FALSE}
@@ -40,7 +45,6 @@ compare(get(old_name), get(new_name), name)
 ```
 
 ## Compare old & new subobjects
-
 
 ### median_expression
 ```{r echo=FALSE}
@@ -114,8 +118,22 @@ is_unique_fails <- DATAFRAME[!out,]
 is_unique_fails
 ```
 
+## is_unique(ensembl_gene_id): 2 fails (7/19/22)
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(is_unique(ensembl_gene_id))
+cf <- confront(gene_info_new, v)
+out <- values(cf)
+is_unique_fails <- gene_info_new[!out,]
+is_unique_fails
 
-##  !is.na(summary): 5 fails
+# is medianexpression data identical for the dup records with me data?
+LOC101927745 <- is_unique_fails[is_unique_fails$hgnc_symbol == 'LOC101927745',]
+LOC105369302 <- is_unique_fails[is_unique_fails$hgnc_symbol == 'LOC105369302',]
+identical(LOC101927745$medianexpression, LOC105369302$medianexpression)
+```
+
+##  !is.na(summary): 5 fails -> 42406 fails
 -> !is.na(summary): 42406 fails - spot check shows these were blank strings before, nulls now, seems fine
 
 ```{r}
@@ -130,11 +148,33 @@ is_unique_fails
 gene_info_old[gene_info_old$ensembl_gene_id == "ENSG00000002933",]
 ```
 
-## AG-365 Missing/optional NT fields
 
+
+***
+other validation
+***
+## New TREAT-AD nominations - AG-667
+```{r}
+nominated_targets_new <- get_subobject(gene_info_new, "nominatedtarget")
+nominated_targets_old <- get_subobject(gene_info_old, "nominatedtarget")
+
+ensg_new <- nominated_targets_new$ensembl_gene_id
+ensg_old <- nominated_targets_old$ensembl_gene_id
+
+new_ensgs <- setdiff(ensg_new, ensg_old)
+missing_ensgs <- setdiff(ensg_old, ensg_new)
+
+nominated_targets_new[nominated_targets_new$ensembl_gene_id %in% new_ensgs,]
+```
+
+## subobject validation
 ```{r}
 nominated_targets <- get_subobject(gene_info_new, "nominatedtarget")
 ```
+
+
+## AG-365 Missing/optional NT fields
+
 
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule
@@ -143,6 +183,18 @@ cf <- confront(nominated_targets, v)
 out <- values(cf)
 is_unique_fails <- nominated_targets[!out,]
 is_unique_fails
+```
+
+## medianexpression: is_unique(ensembl_gene_id, tissue) -> 18 fails (7/19/22)
+
+```{r}
+subobj <- get_subobject(gene_info_new, "medianexpression")
+v <- validator(is_unique(ensembl_gene_id, tissue))
+cf <- confront(subobj, v)
+out <- values(cf)
+is_unique_fails <- subobj[!out,]
+is_unique_fails
+is_unique_fails[order(tissue),]
 ```
 
 
@@ -249,9 +301,6 @@ nominated_target_source <- download_file("syn12540368", type = "csv")
 ```{r}
 nominated_target_source[nominated_target_source$hgnc_symbol %in% c("REST", "HDAC1"),]
 ```
-
-
-
 
 # Cross-file investigation of genes w/o hgnc/name
 
@@ -467,5 +516,88 @@ gene_info_new[gene_info_new$isAnyRNAChangedInADBrain == FALSE,]
 ```
 
 ```{r}
-gene_info_new[gene_info_new$hgnc_symbol == '',]
+studied <- gene_info_new[gene_info_new$rna_brain_change_studied == TRUE ,]
+changed <- studied[studied$isAnyRNAChangedInADBrain == TRUE ,]
+```
+
+```{r}
+nt <- gene_info_new[gene_info_new$nominations %in% c(4, 3, 2, 1),]
+baru <- nt[grepl("BARU", nt$nominatedtarget, fixed = TRUE),]
+longo <- nt[grepl("Longo", nt$nominatedtarget, fixed = TRUE),]
+chang <- nt[grepl("Chang", nt$nominatedtarget, fixed = TRUE),]
+```
+
+```{r}
+gene <- gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000138741',]
+gene$nominatedtarget
+```
+
+
+## Data validation for 3.0
+2 new rows, but apparently no new ENSGs - duplicate ensgs w/different hgncs - AG-691
+```{r}
+setdiff(gene_info_new, gene_info_old)
+setdiff(gene_info_old, gene_info_new)
+
+setdiff(gene_info_new$ensembl_gene_id, gene_info_old$ensembl_gene_id)
+setdiff(gene_info_old$ensembl_gene_id, gene_info_new$ensembl_gene_id)
+```
+
+## uncharacterized LOCs AG-691)
+```{r}
+ulocs <- startsWith(gene_info_new$name, "uncharacterized")
+locs <- startsWith(gene_info_new$hgnc_symbol, "LOC")
+
+name_results <- which(ulocs == TRUE)
+hgnc_results <- which(locs == TRUE)
+
+uloc_names <- gene_info_new[name_results,]
+loc_hgncs <- gene_info_new[hgnc_results,]
+
+setdiff(loc_hgncs, uloc_names)
+setdiff(uloc_names, loc_hgncs)
+```
+
+spot checks
+PLEC: 4 -> 5 nominations
+```{r}
+plec_new <- gene_info_new[gene_info_new$ensembl_gene_id == "ENSG00000178209",]
+plec_old <- gene_info_old[gene_info_old$ensembl_gene_id == "ENSG00000178209",]
+identical(plec_new, plec_old)
+print(plec_new)
+print(plec_old)
+```
+AG-: TREAT-AD nomination - unicode replacement character
+```{r}
+#ensg <- "ENSG00000127666"
+#ensg <- "ENSG00000115267"
+#ensg <- "ENSG00000120915"
+#ensg <- "ENSG00000108771"
+#ensg <- "ENSG00000079785"
+ensg <- "ENSG00000116584"
+new <- gene_info_new[gene_info_new$ensembl_gene_id == ensg,]
+old <- gene_info_old[gene_info_old$ensembl_gene_id == ensg,]
+identical(new, old)
+nom_new <- new$nominatedtarget
+nom_old <- old$nominatedtarget
+print(nom_new)
+print(nom_old)
+```
+
+
+AG-674: unicode replacement character clean up (nominations)
+```{r}
+#ensg <- "ENSG00000089169"
+#ensg <- "ENSG00000131095"
+#ensg <- "ENSG00000147065"
+#ensg <- "ENSG00000163884"
+#ensg <- "ENSG00000025434"
+ensg <- "ENSG00000131408"
+new <- gene_info_new[gene_info_new$ensembl_gene_id == ensg,]
+old <- gene_info_old[gene_info_old$ensembl_gene_id == ensg,]
+identical(new, old)
+nom_new <- new$nominatedtarget
+nom_old <- old$nominatedtarget
+print(nom_new)
+print(nom_old)
 ```

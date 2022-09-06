@@ -77,3 +77,10 @@ is_unique_fails
 ***
 # Other validation
 ***
+Reprocessing to pick up new team (AG-667)
+```{r}
+team_info_new
+team_info_old
+new_team <- team_info_new[team_info_new$team == "Emory-Sage-SGC",]
+new_team$description
+```
