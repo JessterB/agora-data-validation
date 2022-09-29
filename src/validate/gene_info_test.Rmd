@@ -4,7 +4,7 @@ output: html_notebook
 ---
 
 ```{r eval=FALSE, echo=FALSE}
-source("~/repos/rstudio/agora-data-validation/src/utils.R") 
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
 prepare()
 ```
 
