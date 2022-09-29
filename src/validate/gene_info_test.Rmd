@@ -4,7 +4,7 @@ output: html_notebook
 ---
 
 ```{r eval=FALSE, echo=FALSE}
-source("~/repos/rstudio/agora-data-validation/src/utils.R")
+source("~/repos/rstudio/agora-data-validation/src/utils.R") 
 prepare()
 ```
 
@@ -12,7 +12,14 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 name <- "gene_info"
-source_synId <- "syn12540368" #harmonized_targets - TODO other source files
+
+gene_source_synId <- "syn25953363" # gene_table_merged.feather
+igap_source_synId <- "syn12514826" # igap_genetic_association_genes.csv
+eqtl_source_synId <- "syn12514912" # eqtl_meta_analysis.csv
+proteomics_source_synId <- "syn18689335" # Final_Agora_DE.csv
+proteomics_tmt_source_synId <- "syn35221005" # ROSMAP_DiffExp_TMTproteins.csv
+rna_de_source_synId <- "syn27211942" # differentialExpressionSummary.tsv
+
 old_synId <-  "syn12548902" 
 new_synId <- "syn17015359" 
 
@@ -34,7 +41,17 @@ download_files(old_synId, new_synId, name)
 ```
 # Download source files
 ```{r}
-source <- download_file(source_synId, type = "csv") 
+gene <- download_file(gene_source_synId, type = "f") 
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+igap <- download_file(igap_source_synId, type = "csv") 
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+eqtl <- download_file(eqtl_source_synId, type = "csv") 
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+proteomics <- download_file(proteomics_source_synId, type = "csv") 
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+proteomics_tmt <- download_file(proteomics_tmt_source_synId, type = "csv") 
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+rna_de <- download_file(rna_de_source_synId, type = "tsv") 
 assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
 ```
 
@@ -44,27 +61,6 @@ source("~/repos/rstudio/agora-data-validation/src/utils.R")
 compare(get(old_name), get(new_name), name)
 ```
 
-## Compare old & new subobjects
-
-### median_expression
-```{r echo=FALSE}
-source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare_subobjects(get(old_name), get(new_name), "medianexpression", "medianexpression")
-```
-
-### druggability
-```{r echo=FALSE}
-source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare_subobjects(get(old_name), get(new_name), "druggability")
-```
-
-### nominatedtarget
-```{r echo=FALSE}
-source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare_subobjects(get(old_name), get(new_name), "nominatedtarget", "nominatedtarget")
-```
-
-
 # Validated new file against rules
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
@@ -72,40 +68,13 @@ source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info.R")
 test(get(new_name), get(rules))
 ```
 
-## Validated subobjects against rules
-
-### nominated_target
-```{r echo=FALSE}
-source("~/repos/rstudio/agora-data-validation/src/utils.R")
-source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info_nominated_target.R")
-
-subrules <- paste0(rules, "_nominated_target")
-test_subobject(get(new_name), "nominatedtarget", get(subrules))
-```
-
-### druggability
-```{r echo=FALSE}
-source("~/repos/rstudio/agora-data-validation/src/utils.R")
-source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info_druggability.R")
-
-subrules <- paste0(rules, "_druggability")
-test_subobject(get(new_name), "druggability", get(subrules))
-```
-
-### median_expression
-```{r echo=FALSE}
-source("~/repos/rstudio/agora-data-validation/src/utils.R")
-source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info_median_expression.R")
-
-subrules <- paste0(rules, "_median_expression")
-test_subobject(get(new_name), "medianexpression", get(subrules))
-```
-
 ***
 # Outstanding validation failures
 ***
-* nominated target: field_length(data_used_to_support_target_selection, min = 15, max = 2000): 2 fails - see AG-365
-* !is.na(summary): 5 fails 
+* is_unique(ensembl_gene_id): 4 fails
+* !is.na(hgnc_symbol)/field_length(hgnc_symbol, min = 0, max = 100): 15996 - NA values
+* !is.na(name)/field_length(name, min = 0, max = 200): 15996 - NA values
+* !is.na(summary): 42408 fails - NA values
 
 ***
 # Validation failure investigations
@@ -118,7 +87,8 @@ is_unique_fails <- DATAFRAME[!out,]
 is_unique_fails
 ```
 
-## is_unique(ensembl_gene_id): 2 fails (7/19/22)
+## is_unique(ensembl_gene_id): 2 fails (7/19/22) -> 4 fails (9/29/22)
+dups are identical outside of hgnc/name fields
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule
 v <- validator(is_unique(ensembl_gene_id))
@@ -127,10 +97,14 @@ out <- values(cf)
 is_unique_fails <- gene_info_new[!out,]
 is_unique_fails
 
-# is medianexpression data identical for the dup records with me data?
+# is medianexpression data identical for the dups?
 LOC101927745 <- is_unique_fails[is_unique_fails$hgnc_symbol == 'LOC101927745',]
 LOC105369302 <- is_unique_fails[is_unique_fails$hgnc_symbol == 'LOC105369302',]
 identical(LOC101927745$medianexpression, LOC105369302$medianexpression)
+
+LOC107987420 <- is_unique_fails[is_unique_fails$hgnc_symbol == 'LOC107987420',]
+LOC107987434 <- is_unique_fails[is_unique_fails$hgnc_symbol == 'LOC107987434',]
+identical(LOC107987420$medianexpression, LOC107987434$medianexpression)
 ```
 
 ##  !is.na(summary): 5 fails -> 42406 fails
@@ -151,53 +125,39 @@ gene_info_old[gene_info_old$ensembl_gene_id == "ENSG00000002933",]
 
 
 ***
-other validation
+Misc investigations
 ***
-## New TREAT-AD nominations - AG-667
+## Poster stats
 ```{r}
 nominated_targets_new <- get_subobject(gene_info_new, "nominatedtarget")
-nominated_targets_old <- get_subobject(gene_info_old, "nominatedtarget")
 
-ensg_new <- nominated_targets_new$ensembl_gene_id
-ensg_old <- nominated_targets_old$ensembl_gene_id
+amp_nt <- nominated_targets_new[nominated_targets_new$source == 'AMP-AD',]
+treat_nt <- nominated_targets_new[nominated_targets_new$source == 'TREAT-AD',]
+com_nt <- nominated_targets_new[nominated_targets_new$source == 'Community',]
+res_nt <- nominated_targets_new[nominated_targets_new$source == 'Resilience-AD',]
 
-new_ensgs <- setdiff(ensg_new, ensg_old)
-missing_ensgs <- setdiff(ensg_old, ensg_new)
-
-nominated_targets_new[nominated_targets_new$ensembl_gene_id %in% new_ensgs,]
+length(unique(amp_nt$ensembl_gene_id))
+length(unique(treat_nt$ensembl_gene_id))
+length(unique(com_nt$ensembl_gene_id))
+length(unique(res_nt$ensembl_gene_id))
 ```
 
-## subobject validation
+
+
+
+
+
+
+## TMT boolean flip validation
 ```{r}
-nominated_targets <- get_subobject(gene_info_new, "nominatedtarget")
+gene_info_new[gene_info_new$ensembl_gene_id == "ENSG00000134684" ,]
 ```
-
-
-## AG-365 Missing/optional NT fields
-
-
 ```{r}
-# yields a dataframe containing the failure cases for a specific rule
-v <- validator(field_length(data_synapseid, min = 3, max = 25))
-cf <- confront(nominated_targets, v)
-out <- values(cf)
-is_unique_fails <- nominated_targets[!out,]
-is_unique_fails
+gene_info_new[gene_info_new$ensembl_gene_id == "ENSG00000134684", ]
 ```
-
-## medianexpression: is_unique(ensembl_gene_id, tissue) -> 18 fails (7/19/22)
-
 ```{r}
-subobj <- get_subobject(gene_info_new, "medianexpression")
-v <- validator(is_unique(ensembl_gene_id, tissue))
-cf <- confront(subobj, v)
-out <- values(cf)
-is_unique_fails <- subobj[!out,]
-is_unique_fails
-is_unique_fails[order(tissue),]
+gene_info_new[gene_info_new$ensembl_gene_id == "ENSG00000183735", ]
 ```
-
-
 
 ## AG-474: proteomics booleans
 
@@ -246,8 +206,6 @@ gene_info_new[gene_info_new$ensembl_gene_id == "ENSG00000200882" ,]
 rna_seq_differential_expression_new[rna_seq_differential_expression_new$ensembl_gene_id == "ENSG00000200882" ,]
 ```
 
-
-
 ```{r}
 mins <- rna_seq_differential_expression_new %>% group_by(ensembl_gene_id) %>% arrange(adj_p_val) %>% slice(1)
 mins
@@ -272,34 +230,6 @@ gene_info_new[gene_info_new$ensembl_gene_id == "ENSG00000144158" ,]
 gene_info_new[gene_info_new$hgnc_symbol == 'DNAH9',]
 gene_info_new[gene_info_new$hgnc_symbol == 'DH9',]
 gene_info_old[gene_info_old$hgnc_symbol == 'DNAH9',]
-```
-
-## AG-365 field_length(data_used_to_support_target_selection, min = 1, max = 2000): 2 fails
-
-Analysis:
-- These values are missing in both the old data (verified in app & mongo) and in the source data
-- Only impacts two genes (REST, HDAC1)
-- The app doesn't conditionally handle this, so we have a header with no content for these
-
-
-```{r}
-subobj <- get_subobject(gene_info_new, "nominatedtarget")
-v <- validator(field_length(data_used_to_support_target_selection, min = 15, max = 2000))
-cf <- confront(subobj, v)
-out <- values(cf)
-is_unique_fails <- subobj[!out,]
-is_unique_fails
-```
-
-Are there values in the source data?
-=> nope
-
-```{r}
-nominated_target_source <- download_file("syn12540368", type = "csv")
-```
-
-```{r}
-nominated_target_source[nominated_target_source$hgnc_symbol %in% c("REST", "HDAC1"),]
 ```
 
 # Cross-file investigation of genes w/o hgnc/name
@@ -567,37 +497,5 @@ identical(plec_new, plec_old)
 print(plec_new)
 print(plec_old)
 ```
-AG-: TREAT-AD nomination - unicode replacement character
-```{r}
-#ensg <- "ENSG00000127666"
-#ensg <- "ENSG00000115267"
-#ensg <- "ENSG00000120915"
-#ensg <- "ENSG00000108771"
-#ensg <- "ENSG00000079785"
-ensg <- "ENSG00000116584"
-new <- gene_info_new[gene_info_new$ensembl_gene_id == ensg,]
-old <- gene_info_old[gene_info_old$ensembl_gene_id == ensg,]
-identical(new, old)
-nom_new <- new$nominatedtarget
-nom_old <- old$nominatedtarget
-print(nom_new)
-print(nom_old)
-```
 
 
-AG-674: unicode replacement character clean up (nominations)
-```{r}
-#ensg <- "ENSG00000089169"
-#ensg <- "ENSG00000131095"
-#ensg <- "ENSG00000147065"
-#ensg <- "ENSG00000163884"
-#ensg <- "ENSG00000025434"
-ensg <- "ENSG00000131408"
-new <- gene_info_new[gene_info_new$ensembl_gene_id == ensg,]
-old <- gene_info_old[gene_info_old$ensembl_gene_id == ensg,]
-identical(new, old)
-nom_new <- new$nominatedtarget
-nom_old <- old$nominatedtarget
-print(nom_new)
-print(nom_old)
-```

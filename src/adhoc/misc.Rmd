@@ -11,8 +11,6 @@ prepare()
 
 
 
-
-
 ## missing nominated target fields
 ```{r}
 nominations_source <- download_file("syn12540368", type="csv")

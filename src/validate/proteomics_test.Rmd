@@ -294,3 +294,10 @@ Boolean flip investigation
 ```{r}
 proteomics_new[proteomics_new$ensembl_gene_id == 'ENSG00000134684',]
 ```
+
+
+How many genes/proteins do we cover?
+```{r}
+length(unique(proteomics_new$ensembl_gene_id))
+length(unique(proteomics_new$uniprotid))
+```

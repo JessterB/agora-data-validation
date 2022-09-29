@@ -1,0 +1,87 @@
+---
+title: "gene_info_median_expression_test"
+output: html_notebook
+---
+
+```{r eval=FALSE, echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+prepare()
+```
+
+# Validation run metadata
+```{r echo=FALSE}
+# file-specific
+name <- "gene_info"
+sub_name <- "median_expression"
+source_synId <- "syn27211878" # amp_ad_median_expression.csv 
+old_synId <-  "syn12548902" 
+new_synId <- "syn17015359" 
+
+# not file-specific
+old_name <- paste(name, "old", sep="_")
+new_name <- paste(name, "new", sep="_")
+rules <- paste0("rules_gene_info_", sub_name)
+
+# print validation summary
+cat( name, ".json", "\nReported on:  ", date(),
+    "\nold: ", old_synId, " \nnew: ", new_synId,
+    sep="")
+```
+
+# Downloaded files to compare
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+download_files(old_synId, new_synId, name)
+```
+# Download source files
+```{r}
+source <- download_file(source_synId, type = "csv") 
+assign(paste(sub_name, "source", sep="_"), source, envir = .GlobalEnv)
+```
+
+## Compare old & new subobjects
+
+### median_expression
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+compare_subobjects(get(old_name), get(new_name), "medianexpression")
+```
+
+## Validate subobjects against rules
+
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info_median_expression.R")
+test_subobject(get(new_name), "medianexpression", get(rules))
+```
+
+***
+# Outstanding validation failures
+***
+
+* is_unique(ensembl_gene_id, tissue): 18 fails (AG-547)
+
+***
+# Validation failure investigations
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(VALIDATION_RULE)
+cf <- confront(DATAFRAME, v)
+out <- values(cf)
+is_unique_fails <- DATAFRAME[!out,]
+is_unique_fails
+```
+
+## medianexpression: is_unique(ensembl_gene_id, tissue) -> 18 fails (7/19/22)
+
+https://sagebionetworks.jira.com/browse/AG-547 - dup records
+
+```{r}
+subobj <- get_subobject(gene_info_new, "medianexpression")
+v <- validator(is_unique(ensembl_gene_id, tissue))
+cf <- confront(subobj, v)
+out <- values(cf)
+is_unique_fails <- subobj[!out,]
+is_unique_fails
+is_unique_fails[order(is_unique_fails$tissue),]
+```

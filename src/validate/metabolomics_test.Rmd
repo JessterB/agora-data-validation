@@ -204,3 +204,8 @@ Upper case metabolite names maybe (y-axis label)?
 metabolomics_new[metabolomics_new$metabolite_full_name == "Ornithine",]
 metabolomics_new$metabolite_full_name
 ```
+
+How many genes do we cover?
+```{r}
+length(unique(metabolomics_new$ensembl_gene_id))
+```

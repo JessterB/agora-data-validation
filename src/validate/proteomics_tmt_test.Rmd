@@ -12,7 +12,7 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 name <- "proteomics_tmt"
-source_synId <- "syn28544692" # csv
+source_synId <- "syn35221005" # csv
 old_synId <-  "syn33344657" 
 new_synId <- "syn32210527"  
 
@@ -55,12 +55,8 @@ test(get(new_name), get(rules))
 ***
 # Outstanding validation failures
 ***
-These come from the source data:
 
-* cor_pval > 0: 7680 fails
-
-* pval > 0: 7680 fails
-
+4x hgnc_symbol rules - need to revalidate after adding column_rename
 
 ***
 # Validation failure investigations
@@ -76,12 +72,13 @@ is_unique_fails
 ```
 
 
-
-
 ***
 Other validation
 ***
-tmt/lfq conflict
+## tmt/lfq conflict
+Jake's file: -4.188784	l2fc
+Laura's file: 0.2077565 l2fc -> much better agreement now!
+LFQ: 0.2077565 l2fc
 ```{r}
 lfq <- proteomics_new[proteomics_new$uniqid == 'MSN|P26038',]
 tmt <- proteomics_tmt_new[proteomics_tmt_new$uniqid == 'MSN|P26038',]
@@ -90,7 +87,26 @@ tmt
 lfq_dlpfc
 ```
 
-Boolean flip investigation
+## Jake vs Laura results
+compare string differences
+```{r}
+ensg_new <- proteomics_tmt_new$ensembl_gene_id
+ensg_old <- proteomics_tmt_old$ensembl_gene_id
+setdiff(ensg_new, ensg_old)
+```
+```{r}
+uniqid_new <- proteomics_tmt_new$uniqid
+uniqid_old <- proteomics_tmt_old$uniqid
+setdiff(uniqid_new, uniqid_old)
+```
+```{r}
+uniprotid_new <- proteomics_tmt_new$uniprotid
+uniprotid_old <- proteomics_tmt_old$uniprotid
+setdiff(uniprotid_new, uniprotid_old)
+```
+
+
+## Boolean flip investigation
 YARS|P54577 should flip when we incorporate TMT evidence:
 
 ```{r}
@@ -104,27 +120,5 @@ proteomics_tmt_new[proteomics_tmt_new$ensembl_gene_id == 'ENSG00000183735',] # n
 ```
 
 
-spot check visualization values
-```{r}
-proteomics_tmt_new[proteomics_tmt_new$ensembl_gene_id == "ENSG00000197746",]
-```
 
 
-new source file (AG-558 verification)
-```{r}
-source_new <- download_file("syn32188234", type = "csv")
-assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
-```
-
-# Compared old & new files
-```{r echo=FALSE}
-source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare(source, source_new, tmt_source)
-unique(source_new$Tissue)
-```
-
-```{r}
-proteomics_tmt_new
-hist(proteomics_tmt_new$ci_lwr)
-hist(proteomics_tmt_new$ci_upr)
-```

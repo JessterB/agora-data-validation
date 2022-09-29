@@ -15,3 +15,4 @@ renv/
 
 # unarchived html files
 src/validate/*.html
+src/adhoc/*.html

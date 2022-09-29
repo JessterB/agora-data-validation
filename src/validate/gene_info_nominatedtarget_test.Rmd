@@ -1,0 +1,175 @@
+---
+title: "gene_info_nominatedtarget_test"
+output: html_notebook
+---
+
+```{r eval=FALSE, echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+prepare()
+```
+
+# Validation run metadata
+```{r echo=FALSE}
+# file-specific
+name <- "gene_info"
+sub_name <- "nominatedtarget"
+source_synId <- "syn12540368" # harmonized_targets_20220707.csv 
+old_synId <-  "syn12548902" 
+new_synId <- "syn17015359" 
+
+# not file-specific
+old_name <- paste(name, "old", sep="_")
+new_name <- paste(name, "new", sep="_")
+rules <- paste0("rules_gene_info_", sub_name)
+
+# print validation summary
+cat( name, ".json", "\nReported on:  ", date(),
+    "\nold: ", old_synId, " \nnew: ", new_synId,
+    sep="")
+```
+
+# Downloaded files to compare
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+download_files(old_synId, new_synId, name)
+```
+
+# Download source files
+```{r}
+source <- download_file(source_synId, type = "csv") 
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+```
+
+# Compare old & new subobjects
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+compare_subobjects(get(old_name), get(new_name), "nominatedtarget")
+```
+
+# Validate subobjects against rules
+
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info_nominatedtarget.R")
+test_subobject(get(new_name), "nominatedtarget", get(rules))
+```
+
+***
+# Outstanding validation failures
+***
+* !is.na(data_synapseid)/field_length(data_synapseid, min = 3, max = 25): 49 fails -> NA values are properly handled by the app
+* !is.na(data_used_to_support_target_selection)/field_length(data_used_to_support_target_selection, min = 15, max = 2000) : 2 fails -> NA values TODO AG-365
+* !is.na(study)/field_length(study, min = 2, max = 200): 7 fails -> NA values - see https://sagebionetworks.jira.com/browse/AG-846
+* !is.na(validation_study_details)/field_length(validation_study_details, min = 0, max = 1000): 130 fails -> NA values - see https://sagebionetworks.jira.com/browse/AG-846
+
+***
+# Validation failure investigations
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(VALIDATION_RULE)
+cf <- confront(DATAFRAME, v)
+out <- values(cf)
+is_unique_fails <- DATAFRAME[!out,]
+# is_unique_fails <- DATAFRAME[is.na(out),] # use this for nNA failures
+is_unique_fails
+```
+
+## AG-533 Missing/optional NT fields (see )
+### data_synapseid
+Addressed via https://sagebionetworks.jira.com/browse/AG-567
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+nominated_targets <- get_subobject(get(new_name), "nominatedtarget")
+v <- validator(field_length(data_synapseid, min = 3, max = 25))
+cf <- confront(nominated_targets, v)
+out <- values(cf)
+is_unique_fails <- nominated_targets[is.na(out),]
+is_unique_fails
+```
+### data_used_to_support_target_selection
+Needs to be addressed via https://sagebionetworks.jira.com/browse/AG-365
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+nominated_targets <- get_subobject(get(new_name), "nominatedtarget")
+v <- validator(field_length(data_used_to_support_target_selection, min = 15, max = 2000))
+cf <- confront(nominated_targets, v)
+out <- values(cf)
+is_unique_fails <- nominated_targets[is.na(out),]
+is_unique_fails
+```
+### study (nNA)
+Agora omits the 'Learn more about the target nomination process' for these
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+nominated_targets <- get_subobject(get(new_name), "nominatedtarget")
+v <- validator(!is.na(study))
+cf <- confront(nominated_targets, v)
+out <- values(cf)
+is_unique_fails <- nominated_targets[!out,]
+is_unique_fails
+```
+
+### validation_study_details
+Is this supposed to be displayed on the Nominations tab? It isn't for any gene currently, just in the NT table. https://sagebionetworks.jira.com/browse/AG-846
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+nominated_targets <- get_subobject(get(new_name), "nominatedtarget")
+v <- validator(	field_length(validation_study_details, min = 0, max = 1000))
+cf <- confront(nominated_targets, v)
+out <- values(cf)
+is_unique_fails <- nominated_targets[is.na(out),]
+is_unique_fails
+```
+***
+# Misc investigations
+
+
+## New TREAT-AD nominations - AG-667
+```{r}
+nominated_targets_new <- get_subobject(gene_info_new, "nominatedtarget")
+nominated_targets_old <- get_subobject(gene_info_old, "nominatedtarget")
+
+ensg_new <- nominated_targets_new$ensembl_gene_id
+ensg_old <- nominated_targets_old$ensembl_gene_id
+
+new_ensgs <- setdiff(ensg_new, ensg_old)
+missing_ensgs <- setdiff(ensg_old, ensg_new)
+
+new_ensgs
+missing_ensgs
+```
+
+## AG-771: TREAT-AD nominations - unicode replacement character
+```{r}
+#ensg <- "ENSG00000127666"
+#ensg <- "ENSG00000115267"
+#ensg <- "ENSG00000120915"
+#ensg <- "ENSG00000108771"
+#ensg <- "ENSG00000079785"
+ensg <- "ENSG00000116584"
+new <- gene_info_new[gene_info_new$ensembl_gene_id == ensg,]
+old <- gene_info_old[gene_info_old$ensembl_gene_id == ensg,]
+identical(new, old)
+nom_new <- new$nominatedtarget
+nom_old <- old$nominatedtarget
+print(nom_new)
+print(nom_old)
+```
+
+
+## AG-674: unicode replacement character
+```{r}
+#ensg <- "ENSG00000089169"
+#ensg <- "ENSG00000131095"
+#ensg <- "ENSG00000147065"
+#ensg <- "ENSG00000163884"
+#ensg <- "ENSG00000025434"
+ensg <- "ENSG00000131408"
+new <- gene_info_new[gene_info_new$ensembl_gene_id == ensg,]
+old <- gene_info_old[gene_info_old$ensembl_gene_id == ensg,]
+identical(new, old)
+nom_new <- new$nominatedtarget
+nom_old <- old$nominatedtarget
+print(nom_new)
+print(nom_old)
+```

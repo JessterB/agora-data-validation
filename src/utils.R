@@ -104,16 +104,14 @@ compare <- function(old, new, name) {
   cat("is identical:", identical, "\n")
   cat("is equal (1.5e-8 tolerance):", equal, sep="\n")
   
-  cat("\nNumber of Records \n- old: ", nrow(old), "\n- new: ", nrow(new), "\nChange: ", nrow(new) - nrow(old))
-  cat("\n\nNumber of Columns \n- old :", ncol(old), "\n- new: ", ncol(new), "\nChange: ", ncol(new) - ncol(old))
+  cat("\nNumber of Records \n- old: ", nrow(old), "\n- new: ", nrow(new), "\nChange: ", nrow(new) - nrow(old), "\n")
+  cat("\nNumber of Columns \n- old :", ncol(old), "\n- new: ", ncol(new), "\nChange: ", ncol(new) - ncol(old), "\n\n")
 
   old_cols <- colnames(old)
   new_cols <- colnames(new)
-  # cat("\n\nOld Column Names", str_sort(old_cols), sep="\n- ")
-  # cat("\nNew Column Names", str_sort(new_cols), sep="\n- ")
   
-  cat("\n\nColumns dropped: ", setdiff(old_cols,new_cols), sep="\n- ")
-  cat("\n\nColumns added: ", setdiff(new_cols,old_cols), sep="\n- ")
+  cat("Columns dropped: ", setdiff(old_cols,new_cols), sep="\n- ")
+  cat("Columns added: ", setdiff(new_cols,old_cols), sep="\n- ")
 }
 
 # Compares the specified subobject in the specified pair of files
@@ -147,13 +145,9 @@ compare_subobjects <- function(old, new, subname_old, subname_new = subname_old)
   colnames_old <- colnames(old_subobj[[idx_old]])
   colnames_new <- colnames(new_subobj[[idx_new]])
   
-  #cat("\n\nOld Column Names", str_sort(colnames_old), sep="\n- ")
-  #cat("\nNew Column Names", str_sort(colnames_new), sep="\n- ")
-  
-  cat("\n\nColumns dropped: ", setdiff(colnames_old,colnames_new), sep="\n- ")
-  cat("\n\nColumns added: ", setdiff(colnames_new,colnames_old), sep="\n- ")
-  
-  cat("is identical:", identical(old_subobj, new_subobj))
+  cat("is identical:", identical(old_subobj, new_subobj), sep="\n- ")
+  cat("Columns dropped: ", setdiff(colnames_old,colnames_new), sep="\n- ")
+  cat("Columns added: ", setdiff(colnames_new,colnames_old), sep="\n- ")
 }
 
 
