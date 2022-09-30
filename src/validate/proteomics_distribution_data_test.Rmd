@@ -1,6 +1,5 @@
 ---
 title: "proteomics_distribution_data.json"
-output: html_notebook
 ---
 
 ```{r eval=FALSE, echo=FALSE}
@@ -13,13 +12,13 @@ prepare()
 # add file-specific values here
 name <- "proteomics_distribution_data"
 # source_synId <- use proteomics and proteomics_tmt files (source or validated _new)
-old_synId <-  "syn31808319" 
-new_synId <-  "syn31510062"
+old_synId <-  "syn31808319" # m46 v4 Live
+new_synId <-  "syn31510062" # v41 Testing
 
 # not file-specific
 source_name <- paste(name, "source", sep="_")
-old_name <- paste(name, "old", sep="_")
-new_name <- paste(name, "new", sep="_")
+old_name <- paste(name, "old", sep="_") # v4 Live
+new_name <- paste(name, "new", sep="_") # v41 Testing
 rules <- paste0("rules_", name)
 
 # print validation summary

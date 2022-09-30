@@ -1,6 +1,5 @@
 ---
 title: "gene_info_nominatedtarget_test"
-output: html_notebook
 ---
 
 ```{r eval=FALSE, echo=FALSE}
@@ -14,8 +13,8 @@ prepare()
 name <- "gene_info"
 sub_name <- "nominatedtarget"
 source_synId <- "syn12540368" # harmonized_targets_20220707.csv 
-old_synId <-  "syn12548902" 
-new_synId <- "syn17015359" 
+old_synId <-  "syn12548902" # m46 v37 Live
+new_synId <- "syn17015359" # v87 Testing
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")
@@ -57,10 +56,17 @@ test_subobject(get(new_name), "nominatedtarget", get(rules))
 ***
 # Outstanding validation failures
 ***
-* !is.na(data_synapseid)/field_length(data_synapseid, min = 3, max = 25): 49 fails -> NA values are properly handled by the app
-* !is.na(data_used_to_support_target_selection)/field_length(data_used_to_support_target_selection, min = 15, max = 2000) : 2 fails -> NA values TODO AG-365
-* !is.na(study)/field_length(study, min = 2, max = 200): 7 fails -> NA values - see https://sagebionetworks.jira.com/browse/AG-846
-* !is.na(validation_study_details)/field_length(validation_study_details, min = 0, max = 1000): 130 fails -> NA values - see https://sagebionetworks.jira.com/browse/AG-846
+* !is.na(data_synapseid)/field_length(data_synapseid, min = 3, max = 25) 
+49 fails -> NA values are properly handled by the app
+
+* !is.na(data_used_to_support_target_selection)/field_length(data_used_to_support_target_selection, min = 15, max = 2000)
+2 fails -> NA values TODO AG-365
+
+* !is.na(study)/field_length(study, min = 2, max = 200)
+7 fails -> NA values - see https://sagebionetworks.jira.com/browse/AG-846
+
+* !is.na(validation_study_details)/field_length(validation_study_details, min = 0, max = 1000)
+130 fails -> NA values - see https://sagebionetworks.jira.com/browse/AG-846
 
 ***
 # Validation failure investigations
@@ -74,7 +80,7 @@ is_unique_fails <- DATAFRAME[!out,]
 is_unique_fails
 ```
 
-## AG-533 Missing/optional NT fields (see )
+## AG-533 Missing/optional NT fields 
 ### data_synapseid
 Addressed via https://sagebionetworks.jira.com/browse/AG-567
 ```{r}
@@ -172,4 +178,22 @@ nom_new <- new$nominatedtarget
 nom_old <- old$nominatedtarget
 print(nom_new)
 print(nom_old)
+```
+
+# backslash testing - TODO figure out how to make this work
+to hack source file to add a \ for testing:
+nominated_targets$predicted_therapeutic_direction[[1]] =  "Antagonism predicted to reduce disease \u524progression. "
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+# v <- validator(!field_format(predicted_therapeutic_direction, "*\\u0524*", type = "regex"))
+# v <- validator(!field_format(predicted_therapeutic_direction, "*\\*", type = "regex"))
+# v <- validator(!field_format(predicted_therapeutic_direction, "*\\\\*", type = "regex"))
+# v <- validator(!field_format(predicted_therapeutic_direction, "*\\\\\\*", type = "regex"))
+v <- validator(!field_format(predicted_therapeutic_direction, "*[\\]*"))
+
+cf <- confront(nominated_targets, v)
+out <- values(cf)
+is_unique_fails <- nominated_targets[!out,]
+# is_unique_fails <- nominated_targets[is.na(out),] # use this for nNA failures
+is_unique_fails
 ```

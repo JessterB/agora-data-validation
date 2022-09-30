@@ -1,6 +1,5 @@
 ---
 title: "neuropath_corr.json"
-output: html_notebook
 ---
 
 ```{r eval=FALSE, echo=FALSE}
@@ -12,8 +11,9 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 name <- "neuropath_corr"
-old_synId <-  "syn22167182" 
-new_synId <-  "syn22130742"
+source_synId <- "syn22017882"
+old_synId <-  "syn22167182" # m46 v10 Live
+new_synId <-  "syn22130742" # v51 Testing
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")
@@ -48,7 +48,8 @@ test(get(new_name), get(rules))
 ***
 # Outstanding validation failures
 ***
-N/A
+* !is.na(gname)/field_length(gname, min = 0, max = 100)
+8516 fails - missing hngc from source data
 
 ***
 # Validation failure investigations

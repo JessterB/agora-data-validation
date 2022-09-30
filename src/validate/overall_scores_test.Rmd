@@ -1,6 +1,5 @@
 ---
 title: "overall_scores.json"
-output: html_notebook
 ---
 
 NOTE: ETL for this file has been disabled due to AG-699 & AG-701. Agora is pinned to Live v5 for now.
@@ -15,7 +14,7 @@ prepare()
 # file-specific
 name <- "overall_scores"
 source_synId <- "syn25575156"
-old_synId <-  "syn25741025.5" # pin to m37 version
+old_synId <-  "syn25741025.5" # m46 v5 Live (derived from v9 source) - pin to v5 until we are ready for new scores
 new_synId <-  "syn25740976"
 
 # not file-specific

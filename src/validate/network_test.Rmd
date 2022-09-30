@@ -1,6 +1,5 @@
 ---
 title: "network.json"
-output: html_notebook
 ---
 
 ```{r eval=FALSE, echo=FALSE}
@@ -13,8 +12,9 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 name <- "network"
-old_synId <-  "syn12523173" 
-new_synId <- "syn17015361"
+source_synId <- "syn11685347"
+old_synId <-  "syn12523173" # m46 v25 Live
+new_synId <- "syn17015361" # v45 Testing
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")

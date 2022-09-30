@@ -1,6 +1,5 @@
 ---
 title: "proteomics_tmt.json"
-output: html_notebook
 ---
 
 ```{r eval=FALSE, echo=FALSE}
@@ -13,8 +12,8 @@ prepare()
 # file-specific
 name <- "proteomics_tmt"
 source_synId <- "syn35221005" # csv
-old_synId <-  "syn33344657" 
-new_synId <- "syn32210527"  
+old_synId <-  "syn33344657" # m46 v4 Live
+new_synId <- "syn32210527" # v49 Testing
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")
@@ -118,7 +117,4 @@ TBK1|Q9UHD2 should not flip
 proteomics_new[proteomics_new$ensembl_gene_id == 'ENSG00000183735',] # no significant results
 proteomics_tmt_new[proteomics_tmt_new$ensembl_gene_id == 'ENSG00000183735',] # no significant result
 ```
-
-
-
 

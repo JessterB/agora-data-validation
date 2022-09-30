@@ -1,6 +1,5 @@
 ---
 title: "target_exp_validation_harmonized.json"
-output: html_notebook
 ---
 
 ```{r eval=FALSE, echo=FALSE}
@@ -13,8 +12,8 @@ prepare()
 # file-specific
 name <- "target_exp_validation_harmonized"
 source_synId <- "syn2580853" #csv
-old_synId <-  "syn25741027" 
-new_synId <- "syn25740978"  
+old_synId <-  "syn25741027" # m46 v11 Live
+new_synId <- "syn25740978" # v51 Testing
 
 
 # not file-specific

@@ -1,6 +1,5 @@
 ---
 title: "gene_info_druggability_test"
-output: html_notebook
 ---
 
 ```{r eval=FALSE, echo=FALSE}
@@ -14,8 +13,8 @@ prepare()
 name <- "gene_info"
 sub_name <- "druggability"
 source_synId <- "syn13363443" # druggability_genomewide.csv
-old_synId <-  "syn12548902" 
-new_synId <- "syn17015359" 
+old_synId <-  "syn12548902" # m46 v37 Live
+new_synId <- "syn17015359" # v87 Testing
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")

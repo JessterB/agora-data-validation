@@ -1,26 +1,40 @@
 ---
 title: "gene_info boolean validation"
-output: html_notebook
 ---
 
 ## proteomics
 
 shared data
 
-TODO update this to incorporate TMT results
-
+# Sanity checking booleans after TMT data
+How many of these TMT results are significant (pval <= 0.05)
+Do they account for these mismatches?
+* Component “isAnyProteinChangedInADBrain”: 4141 element mismatches
+* Component “protein_brain_change_studied”: 4065 element mismatches
 ```{r}
-prot <- proteomics_new$ensembl_gene_id
-gene_info <- gene_info_new$ensembl_gene_id
-prot_mins <- proteomics_new %>% group_by(ensembl_gene_id) %>% arrange(cor_pval) %>% slice(1)
+sigs <- proteomics_tmt_new[proteomics_tmt_new$cor_pval <= 0.05,]
+nrow(sigs)
 ```
 
+```{r}
+# unify protomics & protomics TMT dataframes
+prot_concat <- rbind(proteomics_new, proteomics_tmt_new)
+prot <- prot_concat$ensembl_gene_id
+
+# find min cor_pval per ENSG across both result sets
+prot_mins <- prot_concat %>% group_by(ensembl_gene_id) %>% arrange(cor_pval) %>% slice(1)
+
+# total number of ENSGs we have prot results for (these should have changed == TRUE)
+length(unique(prot_concat$ensembl_gene_id))
+
+gene_info <- gene_info_new$ensembl_gene_id
+```
 
 1. verify that genes that have no proteomics records are all 'studied == FALSE'
 ```{r}
-prot_not_studied <- setdiff(gene_info, prot) # these should have studied == false
-info_prot_not_studied <- gene_info_new[gene_info_new$ensembl_gene_id %in% prot_not_studied,]
-info_prot_not_studied[info_prot_not_studied$protein_brain_change_studied == TRUE,] # expect empty
+prot_not_studied <- setdiff(gene_info, prot) # these ENSGs should have studied == false because no prot records
+info_prot_not_studied <- gene_info_new[gene_info_new$ensembl_gene_id %in% prot_not_studied,] 
+info_prot_not_studied[info_prot_not_studied$protein_brain_change_studied == TRUE,] # expect empty pre-TMT
 ```
 
 2. verify that genes that have proteomics records are all 'studied == TRUE'
@@ -35,7 +49,7 @@ info_prot_studied[info_prot_studied$protein_brain_change_studied == FALSE,] # ex
 prot_not_changed <- prot_mins[prot_mins$cor_pval > 0.05,]
 prot_not_changed_ensgs <- prot_not_changed$ensembl_gene_id
 info_prot_not_changed <- gene_info_new[gene_info_new$ensembl_gene_id %in% prot_not_changed_ensgs,]
-info_prot_not_changed[info_prot_not_changed$isAnyProteinChangedInADBrain == TRUE,] # expect empty
+info_prot_not_changed[info_prot_not_changed$isAnyProteinChangedInADBrain == TRUE,] # expect empty pre TMT
 ```
 
 
@@ -47,6 +61,15 @@ info_prot_changed <- gene_info_new[gene_info_new$ensembl_gene_id %in% prot_chang
 info_prot_changed[info_prot_changed$isAnyProteinChangedInADBrain == FALSE,] # expect empty
 ```
 
+```{r}
+studied <- gene_info_new[gene_info_new$protein_brain_change_studied == TRUE,]
+nrow(studied)
+```
+
+```{r}
+changed <- studied[studied$isAnyProteinChangedInADBrain == TRUE,]
+length(unique(changed$ensembl_gene_id))
+```
 
 ## RNA
 

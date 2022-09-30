@@ -1,6 +1,5 @@
 ---
 title: "gene_info_test"
-output: html_notebook
 ---
 
 ```{r eval=FALSE, echo=FALSE}
@@ -20,8 +19,8 @@ proteomics_source_synId <- "syn18689335" # Final_Agora_DE.csv
 proteomics_tmt_source_synId <- "syn35221005" # ROSMAP_DiffExp_TMTproteins.csv
 rna_de_source_synId <- "syn27211942" # differentialExpressionSummary.tsv
 
-old_synId <-  "syn12548902" 
-new_synId <- "syn17015359" 
+old_synId <-  "syn12548902" # m46 v37 Live
+new_synId <- "syn17015359" # v87 Testing
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")

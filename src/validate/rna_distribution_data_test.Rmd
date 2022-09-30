@@ -1,6 +1,5 @@
 ---
 title: "rna_distribution_data.json"
-output: html_notebook
 ---
 
 ```{r eval=FALSE, echo=FALSE}
@@ -12,8 +11,8 @@ prepare()
 ```{r echo=FALSE}
 # add file-specific values here
 name <- "rna_distribution_data"
-old_synId <-  "syn27818985" 
-new_synId <-  "syn28094691"  
+old_synId <-  "syn27818985" # m46 v5 Live
+new_synId <-  "syn28094691" # v38 Testing
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")
