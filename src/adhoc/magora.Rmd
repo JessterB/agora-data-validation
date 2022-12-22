@@ -1,0 +1,28 @@
+---
+title: "Model AD Explorer"
+---
+
+What's in syn21483261?
+
+```{r}
+path <- '/Users/jbritton/Downloads/aggregateModules.rda'
+syn_data <- load(path)
+print(syn_data) # mainfest of names of all the loaded objects
+
+code_data <- c("cbe_mods", "dlpfc_mods", "fp_mods", "ifg_mods", "phg_mods", "stg_mods", "tcx_mods")
+print(code_data)
+
+setdiff(syn_data, code_data)
+```
+
+
+
+```{r}
+ampad_modules_raw <- map_dfr(code_data, ~ get(.x)[["df"]]) %>%
+  as_tibble()
+```
+
+```{r}
+moduleGraph <- dlpfc_mods$moduleGraph
+
+```

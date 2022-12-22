@@ -86,6 +86,8 @@ download_file <- function(synId, df_name, type = 'json', quiet = TRUE) {
     if (type == 'json') { data <- fromJSON(path) }
     if (type == 'csv' || type == 'table') { data <- read.csv(path) }
     if (type == 'tsv') { data <- read.csv(path, sep = "\t") }
+    if (type == 'rda') { data <- load(path)}
+    if (type == 'rds') {data <- readRDS(path)}
     df_name <- as.data.frame(data) 
   }
 }
@@ -146,6 +148,7 @@ compare_subobjects <- function(old, new, subname_old, subname_new = subname_old)
   colnames_new <- colnames(new_subobj[[idx_new]])
   
   cat("is identical:", identical(old_subobj, new_subobj), sep="\n- ")
+  cat("is equal:",   all.equal(old_subobj, new_subobj), sep="\n- ")
   cat("Columns dropped: ", setdiff(colnames_old,colnames_new), sep="\n- ")
   cat("Columns added: ", setdiff(colnames_new,colnames_old), sep="\n- ")
 }

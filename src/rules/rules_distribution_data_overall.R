@@ -37,7 +37,7 @@ rules_distribution_data_overall <- validator(
   # name
   is.character(name),
   !is.na(name),
-  name == "Overall Score",
+  name == "Target Risk Score",
 
   # syn_id
   is.character(syn_id),

@@ -11,7 +11,7 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 name <- "target_exp_validation_harmonized"
-source_synId <- "syn2580853" #csv
+source_synId <- "syn24184512" #csv
 old_synId <-  "syn25741027" # m46 v11 Live
 new_synId <- "syn25740978" # v51 Testing
 
@@ -112,10 +112,33 @@ target_exp_validation_harmonized_source[target_exp_validation_harmonized_source$
 #row <- target_exp_validation_harmonized_old[target_exp_validation_harmonized_old$ensembl_gene_id == 'ENSG00000178209',]
 #row$reference_doi
 
-sapply(target_exp_validation_harmonized_source, function(x) sum(x == "")
+sapply(target_exp_validation_harmonized_source, function(x) sum(x == ""))
 ```
 
 
 ```{r}
 target_exp_validation_harmonized_new[target_exp_validation_harmonized_new$ensembl_gene_id == 'ENSG00000138741',]
+```
+
+
+AG-948 - are exp vals also sorted differently now?
+
+```{r}
+vals <- target_exp_validation_harmonized_old$ensembl_gene_id
+table <- table(vals)
+
+x <- as.data.frame(table(vals))
+x[order(x$Freq, decreasing = TRUE), ]
+```
+
+empty exp val entry - due to source file or tranform?
+```{r}
+source_mdk <- target_exp_validation_harmonized_source[target_exp_validation_harmonized_source$ensembl_gene_id == 'ENSG00000110492',]
+print(source_mdk)
+
+mdk <- target_exp_validation_harmonized_old[target_exp_validation_harmonized_old$ensembl_gene_id == 'ENSG00000110492',]
+print(mdk)
+
+mdk_new <- target_exp_validation_harmonized_new[target_exp_validation_harmonized_new$ensembl_gene_id == 'ENSG00000110492',]
+print(mdk_new)
 ```

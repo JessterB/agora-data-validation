@@ -105,10 +105,30 @@ info_rna_not_changed[info_rna_not_changed$isAnyRNAChangedInADBrain == TRUE,] # e
 ```
 
 
-4. verify that genes with min proteomics cor_pval <= 0.05 have 'changed == TRUE'
+4. verify that genes with min rna cor_pval <= 0.05 have 'changed == TRUE'
 ```{r}
 rna_changed <- rna_mins[rna_mins$adj_p_val <= 0.05,]
 rna_changed_ensgs <- rna_changed$ensembl_gene_id
 info_rna_changed <- gene_info_new[gene_info_new$ensembl_gene_id %in% rna_changed_ensgs,]
 info_rna_changed[info_rna_changed$isAnyRNAChangedInADBrain == FALSE,] # expect empty
+```
+
+
+GWAS (igap)
+1. verify that we have more TRUE genes now (AG-796)
+
+```{r}
+v4_source <- download_file("syn12514826.4", 'igap', 'csv')
+v3_source <- download_file("syn12514826.3", 'igap','csv')
+```
+
+```{r}
+new_igap <- gene_info_new[gene_info_new$isIGAP == TRUE, ]
+old_igap <- gene_info_old[gene_info_old$isIGAP == TRUE, ]
+
+nrow(new_igap)
+nrow(old_igap)
+
+nrow(v3_source)
+nrow(v4_source)
 ```

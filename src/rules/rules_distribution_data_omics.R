@@ -37,7 +37,7 @@ rules_distribution_data_omics <- validator(
   # name
   is.character(name),
   !is.na(name),
-  name == "Genomics Score",
+  name == "Multi-omic Risk Score",
 
   # syn_id
   is.character(syn_id),

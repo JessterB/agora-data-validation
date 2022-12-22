@@ -13,9 +13,10 @@ prepare()
 ```{r echo=FALSE}
 # add file-specific values here
 name <- "distribution_data"
-source_synId <- "syn25575156"
-old_synId <-  "syn26274945.7" # m46 v7 Live (derived from v9 source) - pin to v7 until we are ready for new scores
-new_synId <- "syn27572407"
+source_synId <- "syn25575156.13"
+old_synId <-  "syn26274945.7"
+#new_synId <- "syn27572407"
+new_synId <- "syn33334963"
 
 # score-type specific rules files
 genetics_rules <- paste0("rules_", name, "_genetics")
@@ -61,10 +62,10 @@ source("~/repos/rstudio/agora-data-validation/src/rules/rules_distribution_data_
 source("~/repos/rstudio/agora-data-validation/src/rules/rules_distribution_data_overall.R")
 
 # extract nested score-specific distribution data as dataframes
-GeneticsScores <- distribution_data_new[, "GeneticsScore"]
-OmicsScores <- distribution_data_new[, "OmicsScore"]
-LitScores <- distribution_data_new[, "LiteratureScore"]
-OverallScores <- distribution_data_new[, "Logsdon"]
+GeneticsScores <- distribution_data_new[, "genetics_score"]
+OmicsScores <- distribution_data_new[, "multi_omics_score"]
+LitScores <- distribution_data_new[, "literature_score"]
+OverallScores <- distribution_data_new[, "target_risk_score"]
 
 test(GeneticsScores, get(genetics_rules))
 test(OmicsScores, get(omics_rules))
@@ -91,36 +92,6 @@ is_unique_fails
 ```
 
 
-# LiteratureScore.distribution - 0 >= -1e-08: 1 fail (Testing v15)
-```{r echo=FALSE}
-# yields a dataframe containing the failure cases for a specific rule
-v <- validator(LiteratureScore.distribution - 0 >= -1e-08)
-cf <- confront(distribution_data_new, v)
-out <- values(cf)
-is_unique_fails <- distribution_data_new[!out,]
-is_unique_fails
-```
-
-# Logsdon.bins.1 - 0 >= -1e-08: 1 fail (Testing v15)
-```{r echo=FALSE}
-# yields a dataframe containing the failure cases for a specific rule
-v <- validator(Logsdon.bins.1 - 0 >= -1e-08)
-cf <- confront(distribution_data_new, v)
-out <- values(cf)
-is_unique_fails <- distribution_data_new[!out,]
-is_unique_fails
-```
-
-# Logsdon.bins.2 - 0 >= -1e-08: 1 fail (Testing v15)
-```{r echo=FALSE}
-# yields a dataframe containing the failure cases for a specific rule
-v <- validator(Logsdon.bins.2 - 0 >= -1e-08)
-cf <- confront(distribution_data_new, v)
-out <- values(cf)
-is_unique_fails <- distribution_data_new[!out,]
-is_unique_fails
-```
-
 ***
 # Other validation
 ***
@@ -130,6 +101,10 @@ The transform logic was returning distributions sorted by value (highest to lowe
 The application was assuming the distributions were sorted by bin ordering
 I think that this means we have been presenting inaccurate histograms in Agora for all score types :(
 The solution is to add a sort=false parameter to the value_counts call in calculate_distribution
+
+The inappropriate sort was removed via AG-827
+
+# Generate distributions locally from source data and check against processed results
 
 Expected distributions:
 ```{r}
@@ -218,6 +193,7 @@ source("~/repos/rstudio/agora-data-validation/src/utils.R")
 source <- download_file(old_source_synId, type = "table")
 assign(paste(name, "source_old", sep="_"), source, envir = .GlobalEnv)
 ```
+
 Expected old distributions:
 The expected distributions do not match what is in the app today, so same bug :(
 ```{r}
@@ -311,20 +287,26 @@ cat('bin 10: ', sum(lit_binned$lit_bin == '(1.8,2]')- 1, '\n')
 ## Distribution validation
 
 Ensure that no scores were dropped by validating that the distributions contain the expected total number of genes
+note that we have far fewer lit scores with v13 source (8614 vs )
 
 ```{r echo=FALSE}
-cat("\nOverall distribution total genes: ", sum(distribution_data_new$Logsdon.distribution))
-cat("\nOverall total genes expected: ", "24659") # from overall_scores_test.json
+risk <- distribution_data_new$target_risk_score
+cat("\nOverall distribution total genes: ", sapply(risk$distribution, sum))
+cat("\nOverall total genes expected: ", "24822") #  isScored == true from overall_scores_test.json 
 
-cat("\n\nGenomics distribution total genes: ", sum(distribution_data_new$OmicsScore.distribution))
-cat("\nGenomics total genes expected: ", "23876") # from overall_scores_test.json
+omics <- distribution_data_new$multi_omics_score
+cat("\n\nGenomics distribution total genes: ", sapply(omics$distribution, sum))
+cat("\nGenomics total genes expected: ", "23907") #  isScored == true from overall_scores_test.json
 
-cat("\n\nLiterature distribution total genes: ", sum(distribution_data_new$LiteratureScore.distribution))
-cat("\nLiterature total genes expected: ", "15656") # from overall_scores_test.json
+lit <- distribution_data_new$literature_score
+cat("\n\nLiterature distribution total genes: ", sapply(lit$distribution, sum))
+cat("\nLiterature total genes expected: ", "8614") #  isScored == true from overall_scores_test.json
 
-cat("\n\nGenetics distribution total genes: ", sum(distribution_data_new$GeneticsScore.distribution))
-cat("\nGenetics total genes expected: ", "23319") # from overall_scores_test.json
+genetics <- distribution_data_new$genetics
+cat("\n\nGenetics distribution total genes: ", sapply(genetics$distribution, sum))
+cat("\nGenetics total genes expected: ", "24314") #  isScored == true from overall_scores_test.json
 ```
+
 
 ## Hackery to work around structure change (to compare v5 to later versions)
 download the 'new' file and edit it to make it a list of objects instead of one big object to allow comparison with previous versions and validate with existing rules (until we move past this awkward phase...)

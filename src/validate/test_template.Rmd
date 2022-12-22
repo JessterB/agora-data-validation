@@ -1,6 +1,5 @@
 ---
 title: "REPLACEME.json"
-output: html_notebook
 ---
 
 ```{r eval=FALSE, echo=FALSE}
@@ -35,7 +34,8 @@ download_files(old_synId, new_synId, name)
 ```
 
 ```{r}
-source <- download_file(source_synId, type = "REPLACEME") # file type: csv, tsv, json, f (feather)
+# file types: csv, tsv, json, f (feather), rds, rda (rdata)
+source <- download_file(source_synId, type = "REPLACEME") 
 assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
 ```
 

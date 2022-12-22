@@ -13,8 +13,8 @@ prepare()
 # file-specific
 name <- "network"
 source_synId <- "syn11685347"
-old_synId <-  "syn12523173" # m46 v25 Live
-new_synId <- "syn17015361" # v45 Testing
+old_synId <-  "syn12523173" 
+new_synId <- "syn17015361" 
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")
@@ -195,4 +195,28 @@ network_new[network_new$geneB_external_gene_name == "I", ]
 - Do we see this in the old (pre-refactor) file? -> no
 ```{r}
 network_old[network_old$geneB_external_gene_name == "", ]
+```
+
+ENSG refresh
+
+why did we lose 72 records?
+```{r}
+old_aensgs <- network_old$geneA_ensembl_gene_id
+new_aensgs <- network_new$geneA_ensembl_gene_id
+
+length(old_aensgs)
+length(new_aensgs)
+
+length(unique(old_aensgs))
+length(unique(new_aensgs))
+
+diff <- setdiff(sort_anew, sort_aold)
+
+sort_anew <- sort(old_aensgs)
+sort_aold <- sort(new_aensgs)
+
+all.equal(sort_anew, sort_aold)
+
+diff <- setdiff(sort_anew, sort_aold)
+
 ```

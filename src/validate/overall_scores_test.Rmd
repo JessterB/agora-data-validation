@@ -2,8 +2,6 @@
 title: "overall_scores.json"
 ---
 
-NOTE: ETL for this file has been disabled due to AG-699 & AG-701. Agora is pinned to Live v5 for now.
-
 ```{r eval=FALSE, echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 prepare()
@@ -13,9 +11,10 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 name <- "overall_scores"
-source_synId <- "syn25575156"
-old_synId <-  "syn25741025.5" # m46 v5 Live (derived from v9 source) - pin to v5 until we are ready for new scores
-new_synId <-  "syn25740976"
+source_synId <- "syn25575156.13"
+old_synId <-  "syn25741025.5" 
+#new_synId <-  "syn25740976"
+new_synId <-  "syn33333076"
 
 # not file-specific
 source_name <- paste(name, "source", sep="_")
@@ -60,9 +59,9 @@ test(get(new_name), get(rules))
 ***
 Note that these paired failures for GeneName & for each subscore are expected (missing hgnc, missing scores):
 * !is.na(GeneticsScore), in_range(GeneticsScore, min = 0, max = 3): 1340 fails -> 508 with v13 source
-* !is.na(GeneName), 	field_length(GeneName, min = 0, max = 100): 5447 fails -> 5060 with v13 source
-* !is.na(LiteratureScore), in_range(LiteratureScore, min = 0, max = 2): 9003 fails -> 16208 with v13 source
-* !is.na(OmicsScore), in_range(OmicsScore, min = 0, max = 2): 783 fails -> 915 fails with v13 source
+* !is.na(GeneName), 	field_length(GeneName, min = 0, max = 100): 5447 fails -> 5069 with v13 source
+* !is.na(LiteratureScore), in_range(LiteratureScore, min = 0, max = 2): 9003 fails -> 16188 with v13 source
+* !is.na(OmicsScore), in_range(OmicsScore, min = 0, max = 2): 783 fails -> 910 fails with v13 source
 
 ***
 # Validation failure investigations
@@ -187,10 +186,10 @@ cat("\noverall_scores_new$GeneticsScore == 0: ", nrow(genetics_new_zero))
 Are the score values projecting correctly?(source vs new) 
 -> Scores are identical (via all.equal to avoid floating point number equality issues) & 0 -> NA change
 ```{r}
-source_genetics <- source[c("ENSG", "GeneticsScore")]
-source_omics <- source[c("ENSG", "OmicsScore")]
-source_lit <- source[c("ENSG", "LiteratureScore")]
-source_overall <- source[c("ENSG", "Overall")]
+source_genetics <- overall_scores_source[c("ENSG", "GeneticsScore")]
+source_omics <- overall_scores_source[c("ENSG", "OmicsScore")]
+source_lit <- overall_scores_source[c("ENSG", "LiteratureScore")]
+source_overall <- overall_scores_source[c("ENSG", "Overall")]
 
 new_genetics <- overall_scores_new[c("ENSG", "GeneticsScore")]
 new_omics <- overall_scores_new[c("ENSG", "OmicsScore")]
@@ -277,4 +276,21 @@ lit_zeros <- lit_scored[lit_scored$isScored_lit == "Y",]
 print(genetics_zeros)
 print(omics_zeros)
 print(lit_zeros)
+```
+
+missing overall scores?
+
+```{r}
+nas <- overall_scores_source[is.na(overall_scores_source$Logsdon),]
+print(nas)
+zeros <- overall_scores_source[overall_scores_source$Logsdon == 0,]
+print(zeros)
+```
+
+missing neuropath scores?
+```{r}
+nas <- overall_scores_source[is.na(overall_scores_source$FlyNeuroPathScore),]
+print(nas)
+zeros <- overall_scores_source[overall_scores_source$FlyNeuroPathScore == 0,]
+print(zeros)
 ```

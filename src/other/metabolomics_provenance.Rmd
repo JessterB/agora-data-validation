@@ -1,0 +1,39 @@
+---
+title: "metabolomics provenance"
+---
+
+```{r eval=FALSE, echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+prepare()
+```
+
+# Validation run metadata
+```{r echo=FALSE}
+# add file-specific values here
+name <- "metabolomics"
+source_synId <- "syn26064497"
+rdata_synId <- "syn19001410"
+```
+
+# Downloaded files
+```{r}
+source <- download_file(source_synId, type = "f") 
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+
+rdata <- download_file(rdata_synId, type = "rda") 
+assign(paste(name, "rdata", sep="_"), source, envir = .GlobalEnv)
+```
+
+
+
+***
+# Investigation
+***
+Why is the rdata file listed in the metabolomics provenance?
+
+Do the two files contain the same data? => YES
+
+```{r}
+identical(metabolomics_source, metabolomics_rdata)
+
+```

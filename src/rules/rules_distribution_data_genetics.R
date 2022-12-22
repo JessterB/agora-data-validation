@@ -37,7 +37,7 @@ rules_distribution_data_genetics <- validator(
   # name
   is.character(name),
   !is.na(name),
-  name == "Genetics Score",
+  name == "Genetic Risk Score",
 
   # syn_id
   is.character(syn_id),

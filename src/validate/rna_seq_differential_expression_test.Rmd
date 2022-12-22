@@ -74,7 +74,7 @@ is_unique_fails
 ```
 
 
-## is_unique(model, tissue, ensembl_gene_id): 72 fails
+## is_unique(model, tissue, ensembl_gene_id): 72 fails (AG-547)
 
 These are due to pairs of identical duplicate records for every model/tissue combination fro a single gene: 
 9 x 4 = 36 expected x 2 for duplicates = 72
@@ -136,4 +136,19 @@ min <- q1 - (1.5 * IQR)
 
 cat(min, q1, median, q3, max)
 
+```
+
+# unique genes we have results for
+```{r}
+ensgs <- rna_seq_differential_expression_new$ensembl_gene_id
+length(unique(ensgs))
+nrow(rna_seq_differential_expression_new)
+
+ensgs <- rna_seq_differential_expression_old$ensembl_gene_id
+length(unique(ensgs))
+nrow(rna_seq_differential_expression_old)
+
+ensgs <- rna_seq_differential_expression_source$ensembl_gene_id
+length(unique(ensgs))
+nrow(rna_seq_differential_expression_source)
 ```

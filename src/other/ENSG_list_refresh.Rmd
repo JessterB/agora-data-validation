@@ -1,0 +1,47 @@
+---
+title: "AG-469 validation & investigations"
+---
+
+```{r eval=FALSE, echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+prepare()
+```
+
+# Validation run metadata
+```{r echo=FALSE}
+# add file-specific values here
+name <- "ensg_list"
+source_synId <- "syn38973224"
+old_source_synId <- "syn25953363"
+old_synId <-  "syn12548902" # m46 v37 Live (gene_info)
+new_synId <- "syn17015359" # v87 Testing (gene_info)
+
+# not file-specific
+source_name <- paste(name, "source", sep="_")
+old_name <- paste(name, "old", sep="_")
+new_name <- paste(name, "new", sep="_")
+rules <- paste0("rules_", name)
+
+# print validation summary
+cat( name, ".json", "\n", date(),
+    "\nold: ", old_synId, " \nnew: ", new_synId,
+    sep="")
+```
+
+# Downloaded files
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+download_files(old_synId, new_synId, name)
+```
+
+```{r}
+source <- download_file(source_synId, type = "f") # file type: csv, tsv, json, f (feather)
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+```
+```{r}
+source_old <- download_file(old_source_synId, type = "f") # file type: csv, tsv, json, f (feather)
+assign(paste(name, "old_source", sep="_"), source, envir = .GlobalEnv)
+```
+***
+
+
