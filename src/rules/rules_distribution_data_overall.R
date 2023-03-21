@@ -51,6 +51,6 @@ rules_distribution_data_overall <- validator(
   # wiki_id
   is.character(wiki_id),
   !is.na(wiki_id),
-  wiki_id == '613107'
+  wiki_id == '621071'
 
 )
