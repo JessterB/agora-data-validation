@@ -2,27 +2,231 @@
 title: "Model AD Explorer"
 ---
 
-What's in syn21483261?
+```{r eval=FALSE, echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+prepare()
+```
+
+
+--------------
+Pathology data
+--------------
+
+Where do the tissue values in the dropdown come from?
+-> Codes appended to the specimenId
+TODO: Are these consistent across datasets?
+
+Download source files
+```{r}
+# GFAP, S100B
+fivex_acd <- download_file('syn22049816', type = "csv")
+# THIOS, Iba1
+fivex_mcd <- download_file('syn22049825', type = "csv")
+# LAMP1
+fivex_dn <- download_file('syn22049817', type = "csv")
+
+
+# GFAP, S100B, ThioS, IBA1, LAMP1, AT8, HT7 (unused: pT217, PV, WFA, polyTau, silver stain NFT)
+threex_multi <- download_file('syn26601504', type = "csv")
+
+# Soluble Abeta 40/42
+fivex_sabeta <- download_file('syn22101767', type = "csv")
+threex_sabeta <- download_file('syn25913411', type = "csv") 
+
+# Insoluble Abeta 40/42
+fivex_iabeta <- download_file('syn22101766', type = "csv")
+threex_iabeta <- download_file('syn25913418', type = "csv") 
+```
+
+```{r}
+unique(threex_multi$stain)
+```
+
+Astrocyte Cell Density GFAP
+```{r}
+GFAP_5x <- fivex_acd[fivex_acd$Stain == "GFAP",]
+GFAP_3x <- threex_multi[threex_multi$stain == "GFAP",]
+print(GFAP_5x)
+print(GFAP_3x)
+```
+
+Astrocyte Cell Density S100B
+```{r}
+S100B_5x <- fivex_acd[fivex_acd$Stain == "S100B",]
+S100B_3x <- threex_multi[threex_multi$stain == "S100B",]
+print(S100B_5x)
+print(S100B_3x)
+```
+
+Microglial Cell Density (IBA1)
+```{r}
+
+# thios, iba1, s100b, at8, ht7, lamp1
+threex_mcd <- download_file('syn26601504', type = "csv") # file type: csv, tsv, json, f (feather)
+```
+
+
+```{r}
+IBA1_5x <- fivex_mcd[fivex_mcd$Stain == "Iba1",]
+IBA1_3x <- threex_mcd[threex_mcd$stain == "IBA1",]
+print(IBA1_5x)
+print(IBA1_3x)
+```
+
+Phosphotau
+```{r}
+AT8_3x <- threex_mcd[threex_mcd$stain == "AT8",]
+print(AT8_3x)
+```
+Plaque Density (Thio-S)
+```{r}
+Thio_5x <- fivex_mcd[fivex_mcd$Stain == "ThioS",]
+Thio_3x <- threex_mcd[threex_mcd$stain == "ThioS",]
+print(Thio_5x)
+print(Thio_3x)
+```
+
+
+Soluble Abetas
+```{r}
+fivex_sab <- download_file('syn22101767', type = "csv")
+```
+
+```{r}
+individual <- fivex_sab[fivex_sab$individualID == 4255,]
+print(individual)
+```
+
+--------------------
+Gene Expression data 
+--------------------
+
+
+```{r}
+fivex_f_12mo <- download_file('syn24847795', type = "csv") 
+```
+
+
+```{r}
+print(fivex_f_12mo)
+```
+
+Where do gene names come from? The data files contain only ENMSUG values.
+-> gene_expressions_labels.rda
+
+What does gene_expression_labels.rda contain?
+
+```{r}
+path <- '/Users/jbritton/IdeaProjects/magora/data/gene_expressions_labels.rda'
+expression_labels <- load(path)
+```
+
+```{r}
+gene_expressions_labels
+```
+Is this the same gene expression data joined to names?
+-> I think so, the l2fc value matches across one strain/sex/age for hemibrain (cortex and hippocampus are from other source files)
+? is this joined to the expression data somehow? 
+
+```{r}
+strain <- gene_expressions_labels[gene_expressions_labels$mouse_model == '5xFAD', ]
+strain_sex <- strain[strain$sex == 'Female',]
+strain_sex_age <- strain_sex[strain_sex$age == 12, ]
+print(strain_sex_age)
+print(strain_sex_age[strain_sex_age$gene == 'Ptpn6',])
+print(fivex_f_12mo[fivex_f_12mo$GeneID == 'ENSMUSG00000004266',])
+```
+
+Are the columns consistent across all of the gene expression files?
+
+```{r}
+path <- '/Users/jbritton/IdeaProjects/magora/data-raw/gene_expressions/data_sources.csv'
+expression_data_sources <- read.csv(path)
+```
+
+
+```{r}
+synIds <- matrix(, 0, ncol = 1)
+
+for(i in 1:nrow(expression_data_sources)) {
+  syn <- expression_data_sources[i,]$id
+  version <- expression_data_sources[i,]$version
+  id <- paste(syn, version, sep = '.')
+  synIds <- rbind(synIds, id)
+}
+
+for(i in 1:nrow(expression_data_sources)) {
+  data <- download_file(synIds[i], type = 'csv')
+  assign(synIds[i], data, envir = .GlobalEnv)
+}
+
+```
+
+
+```{r}
+cols <- matrix(, 0, ncol = 8)
+
+for(i in 1:nrow(expression_data_sources)) {
+  col_names <- colnames(get(synIds[i]))
+  if(length(col_names) != 8) {
+    print("ERROR!", synId, " has the wrong number of columns!")
+  }
+  cols <- rbind(cols, col_names)
+}
+#print(cols)
+
+print(unique(cols[,1]))
+print(unique(cols[,2]))
+print(unique(cols[,3]))
+print(unique(cols[,4]))
+print(unique(cols[,5]))
+print(unique(cols[,6]))
+print(unique(cols[,7]))
+print(unique(cols[,8]))
+```
+
+
+----------
+Nanostring
+----------
+
+What's in syn21483261 (aggregate modules)?
+
 
 ```{r}
 path <- '/Users/jbritton/Downloads/aggregateModules.rda'
 syn_data <- load(path)
 print(syn_data) # mainfest of names of all the loaded objects
 
+# modules from nanostring.R
 code_data <- c("cbe_mods", "dlpfc_mods", "fp_mods", "ifg_mods", "phg_mods", "stg_mods", "tcx_mods")
 print(code_data)
 
 setdiff(syn_data, code_data)
 ```
 
-
+Modules
 
 ```{r}
 ampad_modules_raw <- map_dfr(code_data, ~ get(.x)[["df"]]) %>%
   as_tibble()
+
+unique(ampad_modules_raw$ModuleName)
 ```
 
 ```{r}
 moduleGraph <- dlpfc_mods$moduleGraph
+print(moduleGraph)
+```
 
+What is syn22105392 (logHKNormalized_Allsamples.csv)?
+Colnames are not helpful!
+x, gt prefixes mean what? what are the numbers?!
+
+```{r}
+allsamples <- download_file('syn22105392', type = "csv") 
+```
+
+```{r}
+head(allsamples)
 ```

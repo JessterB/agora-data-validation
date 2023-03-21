@@ -11,8 +11,8 @@ prepare()
 ```{r echo=FALSE}
 # add file-specific values here
 name <- "rna_distribution_data"
-old_synId <-  "syn27818985" # m46 v5 Live
-new_synId <-  "syn28094691" # v38 Testing
+old_synId <-  "syn27818985.7" # m49 Live
+new_synId <-  "syn28094691" 
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")
@@ -53,6 +53,10 @@ source("~/repos/rstudio/agora-data-validation/src/rules/rules_rna_distribution_d
 test(get(new_name), get(rules))
 ```
 
+***
+# Outstanding validation failures
+***
+N/A
 
 ***
 # Validation failure investigations

@@ -13,10 +13,9 @@ prepare()
 ```{r echo=FALSE}
 # add file-specific values here
 name <- "distribution_data"
-source_synId <- "syn25575156.13"
-old_synId <-  "syn26274945.7"
-#new_synId <- "syn27572407"
-new_synId <- "syn33334963"
+source_synId <- "syn25575156.13" # new 5 point overall score introduced
+old_synId <-  "syn26274945.8" # m49 Live
+new_synId <- "syn27572407"
 
 # score-type specific rules files
 genetics_rules <- paste0("rules_", name, "_genetics")
@@ -35,7 +34,7 @@ cat( name, ".json", "\n", date(),
     sep="")
 ```
 
-# Downloaded files
+# Download files
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 download_files(old_synId, new_synId, name)
@@ -102,7 +101,7 @@ The application was assuming the distributions were sorted by bin ordering
 I think that this means we have been presenting inaccurate histograms in Agora for all score types :(
 The solution is to add a sort=false parameter to the value_counts call in calculate_distribution
 
-The inappropriate sort was removed via AG-827
+=> The inappropriate sort was removed via AG-827
 
 # Generate distributions locally from source data and check against processed results
 
@@ -134,7 +133,7 @@ lit_binned <- lit_only %>% mutate(lit_bin = cut(LiteratureScore, breaks=10))
 
 # expected no genes per bin
 overall_bins <- unique(overall_binned$overall_bin)
-cat('Overall\n')
+cat('\nOverall\n')
 cat('bin 1: ', sum(overall_binned$overall_bin == '(-0.005,0.5]'), '\n')
 cat('bin 2: ', sum(overall_binned$overall_bin == '(0.5,1]'), '\n')
 cat('bin 3: ', sum(overall_binned$overall_bin == '(1,1.5]'), '\n')
@@ -147,7 +146,7 @@ cat('bin 9: ', sum(overall_binned$overall_bin == '(4,4.5]'), '\n')
 cat('bin 10: ', sum(overall_binned$overall_bin == '(4.5,5]')- 1, '\n')
 
 genetics_bins <- unique(genetics_binned$genetics_bin)
-cat('Genetics\n')
+cat('\nGenetics\n')
 cat('bin 1: ', sum(genetics_binned$genetics_bin == '(-0.003,0.3]'), '\n')
 cat('bin 2: ', sum(genetics_binned$genetics_bin == '(0.3,0.6]'), '\n')
 cat('bin 3: ', sum(genetics_binned$genetics_bin == '(0.6,0.9]'), '\n')
@@ -160,7 +159,7 @@ cat('bin 9: ', sum(genetics_binned$genetics_bin == '(2.4,2.7]'), '\n')
 cat('bin 10: ', sum(genetics_binned$genetics_bin == '(2.7,3]')- 1, '\n')
 
 omics_bins <- unique(omics_binned$omics_bin)
-cat('Omics\n')
+cat('\nOmics\n')
 cat('bin 1: ', sum(omics_binned$omics_bin == '(-0.002,0.2]'), '\n')
 cat('bin 2: ', sum(omics_binned$omics_bin == '(0.2,0.4]'), '\n')
 cat('bin 3: ', sum(omics_binned$omics_bin == '(0.4,0.6]'), '\n')
@@ -174,7 +173,7 @@ cat('bin 10: ', sum(omics_binned$omics_bin == '(1.8,2]')- 1,  '\n')
 
 
 lit_bins <- unique(lit_binned$lit_bin)
-cat('Literature\n')
+cat('\nLiterature\n')
 cat('bin 1: ', sum(lit_binned$lit_bin == '(-0.002,0.2]'), '\n')
 cat('bin 2: ', sum(lit_binned$lit_bin == '(0.2,0.4]'), '\n')
 cat('bin 3: ', sum(lit_binned$lit_bin == '(0.4,0.6]'), '\n')
@@ -190,7 +189,7 @@ cat('bin 10: ', sum(lit_binned$lit_bin == '(1.8,2]')- 1, '\n')
 Did this impact our old distributions too?
 ```{r}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-source <- download_file(old_source_synId, type = "table")
+source <- download_file("syn25575156.9", type = "table")
 assign(paste(name, "source_old", sep="_"), source, envir = .GlobalEnv)
 ```
 
@@ -229,7 +228,7 @@ lit_binned <- lit_only %>% mutate(lit_bin = cut(LiteratureScore, breaks=10))
 
 # expected no genes per bin
 overall_bins <- unique(overall_binned$overall_bin)
-cat('Overall\n')
+cat('\nOverall\n')
 cat('bin 1: ', sum(overall_binned$overall_bin == '(-0.007,0.7]') - 1, '\n')
 cat('bin 2: ', sum(overall_binned$overall_bin == '(0.7,1.4]'), '\n')
 cat('bin 3: ', sum(overall_binned$overall_bin == '(1.4,2.1]'), '\n')
@@ -242,7 +241,7 @@ cat('bin 9: ', sum(overall_binned$overall_bin == '(5.6,6.3]'), '\n')
 cat('bin 10: ', sum(overall_binned$overall_bin == '(6.3,7.01]')- 1, '\n')
 
 genetics_bins <- unique(genetics_binned$genetics_bin)
-cat('Genetics\n')
+cat('\nGenetics\n')
 cat('bin 1: ', sum(genetics_binned$genetics_bin == '(-0.003,0.3]') - 1, '\n')
 cat('bin 2: ', sum(genetics_binned$genetics_bin == '(0.3,0.6]'), '\n')
 cat('bin 3: ', sum(genetics_binned$genetics_bin == '(0.6,0.9]'), '\n')
@@ -255,7 +254,7 @@ cat('bin 9: ', sum(genetics_binned$genetics_bin == '(2.4,2.7]'), '\n')
 cat('bin 10: ', sum(genetics_binned$genetics_bin == '(2.7,3]')- 1, '\n')
 
 omics_bins <- unique(omics_binned$omics_bin)
-cat('Omics\n')
+cat('\nOmics\n')
 cat('bin 1: ', sum(omics_binned$omics_bin == '(-0.002,0.2]') - 1, '\n')
 cat('bin 2: ', sum(omics_binned$omics_bin == '(0.2,0.4]'), '\n')
 cat('bin 3: ', sum(omics_binned$omics_bin == '(0.4,0.6]'), '\n')
@@ -269,7 +268,7 @@ cat('bin 10: ', sum(omics_binned$omics_bin == '(1.8,2]')- 1,  '\n')
 
 
 lit_bins <- unique(lit_binned$lit_bin)
-cat('Literature\n')
+cat('\nLiterature\n')
 cat('bin 1: ', sum(lit_binned$lit_bin == '(-0.002,0.2]') - 1, '\n')
 cat('bin 2: ', sum(lit_binned$lit_bin == '(0.2,0.4]'), '\n')
 cat('bin 3: ', sum(lit_binned$lit_bin == '(0.4,0.6]'), '\n')

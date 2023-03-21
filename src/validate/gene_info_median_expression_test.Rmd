@@ -12,9 +12,9 @@ prepare()
 # file-specific
 name <- "gene_info"
 sub_name <- "median_expression"
-source_synId <- "syn27211878" # amp_ad_median_expression.csv 
-old_synId <-  "syn12548902" # m46 v37 Live
-new_synId <- "syn17015359" # v87 Testing
+source_synId <- "syn27211878.2" # amp_ad_median_expression.csv 
+old_synId <-  "syn12548902.39" # m49 Live
+new_synId <- "syn17015359"
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")
@@ -43,7 +43,7 @@ assign(paste(sub_name, "source", sep="_"), source, envir = .GlobalEnv)
 ### median_expression
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare_subobjects(get(old_name), get(new_name), "medianexpression")
+compare_subobjects(get(old_name), get(new_name), "ensembl_gene_id", "medianexpression")
 ```
 
 ## Validate subobjects against rules
@@ -58,7 +58,7 @@ test_subobject(get(new_name), "medianexpression", get(rules))
 # Outstanding validation failures
 ***
 
-* is_unique(ensembl_gene_id, tissue): 18 fails (AG-547)
+N/A
 
 ***
 # Validation failure investigations
@@ -73,7 +73,7 @@ is_unique_fails
 
 ## medianexpression: is_unique(ensembl_gene_id, tissue) -> 18 fails (7/19/22)
 
-https://sagebionetworks.jira.com/browse/AG-547 - dup records
+https://sagebionetworks.jira.com/browse/AG-547 - dup records => RESOLVED
 
 ```{r}
 subobj <- get_subobject(gene_info_new, "medianexpression")

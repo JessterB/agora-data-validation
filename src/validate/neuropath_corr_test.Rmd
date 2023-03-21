@@ -12,7 +12,7 @@ prepare()
 # file-specific
 name <- "neuropath_corr"
 source_synId <- "syn22017882"
-old_synId <-  "syn22167182" 
+old_synId <-  "syn22167182.13" #m49 Live 
 new_synId <-  "syn22130742" 
 
 # not file-specific
@@ -48,8 +48,7 @@ test(get(new_name), get(rules))
 ***
 # Outstanding validation failures
 ***
-* !is.na(gname)/field_length(gname, min = 0, max = 100)
-8516 fails - missing hngc from source data
+* !is.na(gname)/field_length(gname, min = 0, max = 100): 8516 fails - missing hngc from source data
 
 ***
 # Validation failure investigations

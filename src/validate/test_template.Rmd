@@ -27,12 +27,14 @@ cat( name, ".json", "\n", date(),
     sep="")
 ```
 
-# Downloaded files
+# Download files
+## download new and old json files
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 download_files(old_synId, new_synId, name)
 ```
 
+## download source file
 ```{r}
 # file types: csv, tsv, json, f (feather), rds, rda (rdata)
 source <- download_file(source_synId, type = "REPLACEME") 

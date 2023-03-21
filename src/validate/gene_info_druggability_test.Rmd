@@ -12,9 +12,9 @@ prepare()
 # file-specific
 name <- "gene_info"
 sub_name <- "druggability"
-source_synId <- "syn13363443" # druggability_genomewide.csv
-old_synId <-  "syn12548902" # m46 v37 Live
-new_synId <- "syn17015359" # v87 Testing
+source_synId <- "syn13363443.11" # druggability_genomewide.csv
+old_synId <-  "syn12548902.39" # m49 Live
+new_synId <- "syn17015359" 
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")
@@ -43,7 +43,7 @@ assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
 
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare_subobjects(get(old_name), get(new_name), "druggability")
+compare_subobjects(get(old_name), get(new_name), "ensembl_gene_id", "druggability")
 ```
 
 ## Validate subobjects against rules

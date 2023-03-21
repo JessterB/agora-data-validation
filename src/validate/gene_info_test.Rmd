@@ -2,6 +2,11 @@
 title: "gene_info_test"
 ---
 
+See the following files and paired rules files for gene_info subobject validation:
+* gene_info_druggability_test.R & rules_gene_info_druggability.R
+* gene_info_median_expression_test.R & rules_gene_info_median_expression.R
+* gene_info_nominatedtarget_test.R & rules_gene_info_nominatedtarget.R
+
 ```{r eval=FALSE, echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 prepare()
@@ -12,14 +17,16 @@ prepare()
 # file-specific
 name <- "gene_info"
 
-gene_source_synId <- "syn25953363" # gene_table_merged.feather
-igap_source_synId <- "syn12514826" # igap_genetic_association_genes.csv
-eqtl_source_synId <- "syn12514912" # eqtl_meta_analysis.csv
-proteomics_source_synId <- "syn18689335" # Final_Agora_DE.csv
-proteomics_tmt_source_synId <- "syn35221005" # ROSMAP_DiffExp_TMTproteins.csv
-rna_de_source_synId <- "syn27211942" # differentialExpressionSummary.tsv
+# source files
+gene_source_synId <- "syn25953363.4" # gene_table_merged.feather
+igap_source_synId <- "syn12514826.4" # igap_genetic_association_genes.csv
+eqtl_source_synId <- "syn12514912.3" # eqtl_meta_analysis.csv
+proteomics_source_synId <- "syn18689335.3" # Final_Agora_DE.csv
+proteomics_tmt_source_synId <- "syn35221005.2" # ROSMAP_DiffExp_TMTproteins.csv
+rna_de_source_synId <- "syn27211942.1" # differentialExpressionSummary.tsv
 
-old_synId <-  "syn12548902" 
+# json files
+old_synId <-  "syn12548902.39" # m49 Live
 new_synId <- "syn17015359" 
 
 # not file-specific
@@ -71,10 +78,10 @@ test(get(new_name), get(rules))
 ***
 # Outstanding validation failures
 ***
-* is_unique(ensembl_gene_id): 4 fails -> NEW 0 fails
-* !is.na(hgnc_symbol)/field_length(hgnc_symbol, min = 0, max = 100): 15996 - NA values -> NEW 1967
-* !is.na(name)/field_length(name, min = 0, max = 200): 15996 - NA values -> NEW 19368
-* !is.na(summary): 42408 fails - NA values -> NEW 44167
+* !is.na(hgnc_symbol)/field_length(hgnc_symbol, min = 0, max = 100): 19367 - NA values
+* !is.na(nominations)/nominations > 0/lengths(nominatedtarget) > 0: 67979 fails (only expect nominated targets to pass this one)
+* !is.na(name)/field_length(name, min = 0, max = 200): 19368 - NA values
+* !is.na(summary): 44167 fails - NA values
 
 ***
 # Validation failure investigations
@@ -86,6 +93,8 @@ out <- values(cf)
 is_unique_fails <- DATAFRAME[!out,]
 is_unique_fails
 ```
+
+
 
 ## is_unique(ensembl_gene_id): 2 fails (7/19/22) -> 4 fails (9/29/22)
 dups are identical outside of hgnc/name fields

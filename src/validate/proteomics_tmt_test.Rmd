@@ -12,8 +12,8 @@ prepare()
 # file-specific
 name <- "proteomics_tmt"
 source_synId <- "syn35221005" # csv
-old_synId <-  "syn33344657" # m46 v4 Live
-new_synId <- "syn32210527" # v49 Testing
+old_synId <-  "syn33344657.7" # m49 Live
+new_synId <- "syn32210527"
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")
@@ -54,8 +54,7 @@ test(get(new_name), get(rules))
 ***
 # Outstanding validation failures
 ***
-
-4x hgnc_symbol rules - need to revalidate after adding column_rename
+N/A
 
 ***
 # Validation failure investigations

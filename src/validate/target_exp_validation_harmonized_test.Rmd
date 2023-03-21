@@ -12,7 +12,7 @@ prepare()
 # file-specific
 name <- "target_exp_validation_harmonized"
 source_synId <- "syn24184512" #csv
-old_synId <-  "syn25741027" # m46 v11 Live
+old_synId <-  "syn25741027.14" # m49 Live
 new_synId <- "syn25740978" # v51 Testing
 
 
@@ -58,7 +58,7 @@ test(get(new_name), get(rules))
 # Outstanding validation failures
 ***
 
-* field_length(ensembl_gene_id, n = 15): 1 fail - See AG-351
+* field_length(ensembl_gene_id, n = 15): 1 fail - See AG-351 (TL;DR - ignore this failure)
 
 * field_format(reference_doi, "^$|^https?://doi.org/.*$", type = "regex"): 103 fails [changed from "" to null via AG-474]
 

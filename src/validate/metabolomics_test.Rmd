@@ -12,8 +12,8 @@ prepare()
 # file-specific
 name <- "metabolomics"
 source_synId <- "syn26064497"
-old_synId <-  "syn19315964" # m46 v11 Live
-new_synId <- "syn19276330" # v52 testing
+old_synId <-  "syn19315964.14" # m49 Live
+new_synId <- "syn19276330"
 
 # not file-specific
 source_name <- paste(name, "source", sep="_")

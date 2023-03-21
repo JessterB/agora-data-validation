@@ -13,7 +13,7 @@ prepare()
 # file-specific
 name <- "network"
 source_synId <- "syn11685347"
-old_synId <-  "syn12523173" 
+old_synId <-  "syn12523173.27" # m49 Live
 new_synId <- "syn17015361" 
 
 # not file-specific
@@ -58,8 +58,6 @@ These are due to blank string hgnc_symbols, see AG-345:
 * field_length(geneB_external_gene_name, min = 2, max = 100): 216 fails 
 -- increase due to "INA" => "I" as above
 
-These are all records with the same geneB, see AG-346:
-* is_unique(brainRegion, geneA_ensembl_gene_id, geneB_ensembl_gene_id): 144 fails
 
 
 ***

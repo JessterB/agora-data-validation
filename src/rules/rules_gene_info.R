@@ -8,7 +8,7 @@ rules_gene_info <- validator(
   # druggability rules
   is.list(druggability),
   !is.na(druggability),
-  # TODO validate object and object fields
+  # see additional validation rules in rules_gene_info_druggability.R
   
   # ensembl_gene_id rules
   is.character(ensembl_gene_id),
@@ -32,7 +32,7 @@ rules_gene_info <- validator(
   # median_expression rules
   is.list(medianexpression),
   !is.na(medianexpression),
-  # TODO validate object and object fields
+  # see additional validation rules in rules_gene_info_median_expression.R
   
   # name rules
   is.character(name),
@@ -41,13 +41,13 @@ rules_gene_info <- validator(
   
   # nominated_target rules
   is.list(nominatedtarget),
-  !is.na(nominatedtarget),
-  # TODO validate object and object fields
+  lengths(nominatedtarget) > 0,
+  # see additional validation rules in rules_gene_info_nominatedtarget.R
   
   # nominations rules
   is.numeric(nominations),
-  # !is.na(nominations), 
-  # nominations > 0,
+  !is.na(nominations), 
+  nominations > 0,
   
   # protein_brain_change_studied rules
   is.logical(protein_brain_change_studied),

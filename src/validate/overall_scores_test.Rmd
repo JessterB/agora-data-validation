@@ -12,9 +12,8 @@ prepare()
 # file-specific
 name <- "overall_scores"
 source_synId <- "syn25575156.13"
-old_synId <-  "syn25741025.5" 
-#new_synId <-  "syn25740976"
-new_synId <-  "syn33333076"
+old_synId <-  "syn25741025.7" #m49 Live
+new_synId <-  "syn25740976"
 
 # not file-specific
 source_name <- paste(name, "source", sep="_")
@@ -58,10 +57,10 @@ test(get(new_name), get(rules))
 # Outstanding validation failures
 ***
 Note that these paired failures for GeneName & for each subscore are expected (missing hgnc, missing scores):
-* !is.na(GeneticsScore), in_range(GeneticsScore, min = 0, max = 3): 1340 fails -> 508 with v13 source
-* !is.na(GeneName), 	field_length(GeneName, min = 0, max = 100): 5447 fails -> 5069 with v13 source
-* !is.na(LiteratureScore), in_range(LiteratureScore, min = 0, max = 2): 9003 fails -> 16188 with v13 source
-* !is.na(OmicsScore), in_range(OmicsScore, min = 0, max = 2): 783 fails -> 910 fails with v13 source
+* !is.na(GeneName), 	field_length(GeneName, min = 0, max = 100): 5069  (v13 source)
+* !is.na(GeneticsScore), in_range(GeneticsScore, min = 0, max = 3): 508 (v13 source)
+* !is.na(LiteratureScore), in_range(LiteratureScore, min = 0, max = 2): 16188 (v13 source)
+* !is.na(OmicsScore), in_range(OmicsScore, min = 0, max = 2): 910  (v13 source)
 
 ***
 # Validation failure investigations
@@ -69,7 +68,7 @@ Note that these paired failures for GeneName & for each subscore are expected (m
 
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule
-v <- validator(RULE)
+v <- validator(field_length(hgnc_symbol, min = 0, max = 100))
 cf <- confront(overall_scores_new, v)
 out <- values(cf)
 is_unique_fails <- overall_scores_new[!out,]
@@ -80,6 +79,28 @@ is_unique_fails
 ***
 # Other validation
 ***
+
+Find a null score for scores update
+```{r}
+overall_scores_new[is.na(overall_scores_new$multi_omics_score),]
+overall_scores_new[is.na(overall_scores_new$genetics_score),]
+overall_scores_new[is.na(overall_scores_new$target_risk_score),]
+
+overall_scores_new[overall_scores_new$multi_omics_score == 0,]
+overall_scores_new[overall_scores_new$genetics_score == 0,]
+overall_scores_new[overall_scores_new$target_risk_score == 0,]
+```
+
+
+## WASH7P missing score
+the missing score in the source data table is 0, but isScored == Y
+
+
+```{r}
+overall_scores_source[overall_scores_source$ENSG == "ENSG00000227232",]
+
+overall_scores_new[overall_scores_new$ENSG == "ENSG00000227232",]
+```
 
 ## Cross-file validation
 

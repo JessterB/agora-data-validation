@@ -12,8 +12,8 @@ prepare()
 # file-specific
 name <- "proteomics"
 source_synId <- "syn18689335" # csv
-old_synId <-  "syn18693175" # m46 v12 Live
-new_synId <- "syn18691125"# v55 Testing
+old_synId <-  "syn18693175.15" # m49 Live
+new_synId <- "syn18691125"
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")

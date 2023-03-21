@@ -12,8 +12,8 @@ prepare()
 # file-specific
 name <- "team_info"
 source_synId <- "syn12615624" #csv
-old_synId <-  "syn12616884" # m46 v20 Live
-new_synId <- "syn17015358" # v52 Testing
+old_synId <-  "syn12616884.22" # m9 Live
+new_synId <- "syn17015358"
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")

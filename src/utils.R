@@ -70,7 +70,7 @@ download_file <- function(synId, df_name, type = 'json', quiet = TRUE) {
     file <- synTableQuery(sel_statement, resultsAs='csv')
     path <- file$filepath
   } else {
-    file <- synGet(id_parts[[1]][1], version = version_value, downloadLocation = "files/")
+    file <- synGet(id_parts[[1]][1], version = version_value, downloadLocation = "files/", ifcollision='overwrite.local')
     path <- file$path
   }
 
@@ -99,21 +99,20 @@ download_file <- function(synId, df_name, type = 'json', quiet = TRUE) {
 # - name  Friendly name for the pair of files being compared, e.g. gene_info
 # - summarize  Whether to print out a summary() for each file
 
-# TODO this could be improved once our field names stabilize
 compare <- function(old, new, name) {
   identical <- identical(old, new)
   equal <- all.equal(old, new)
   cat("is identical:", identical, "\n")
   cat("is equal (1.5e-8 tolerance):", equal, sep="\n")
   
-  cat("\nNumber of Records \n- old: ", nrow(old), "\n- new: ", nrow(new), "\nChange: ", nrow(new) - nrow(old), "\n")
-  cat("\nNumber of Columns \n- old :", ncol(old), "\n- new: ", ncol(new), "\nChange: ", ncol(new) - ncol(old), "\n\n")
+  cat("\nNumber of Records \n- old: ", nrow(old), "\n- new: ", nrow(new), "\n-change: ", nrow(new) - nrow(old), "\n")
+  cat("\n\nNumber of Columns \n- old :", ncol(old), "\n- new: ", ncol(new), "\n-change: ", ncol(new) - ncol(old), "\n\n")
 
   old_cols <- colnames(old)
   new_cols <- colnames(new)
   
   cat("Columns dropped: ", setdiff(old_cols,new_cols), sep="\n- ")
-  cat("Columns added: ", setdiff(new_cols,old_cols), sep="\n- ")
+  cat("\nColumns added: ", setdiff(new_cols,old_cols), sep="\n- ")
 }
 
 # Compares the specified subobject in the specified pair of files
@@ -122,38 +121,78 @@ compare <- function(old, new, name) {
 # - subname_old  The key of the subobject in the old file
 # - subname_new The key of the subobject in the new file, if different from the key in the old file
 
-compare_subobjects <- function(old, new, subname_old, subname_new = subname_old) {
+#compare_subobjects <- function(old, new, subname_old, subname_new = subname_old) {
 
-  old_subobj <- old[[subname_old]]
-  new_subobj <- new[[subname_new]]
+#  old_subobj <- old[[subname_old]]
+#  new_subobj <- new[[subname_new]]
   
   # Find a row in the dataframe where the subobject exists
-  for (i in 1:length(old_subobj)) {
-    if (class(old_subobj[[i]]) == "data.frame") {
-      idx_old <- i
-      break
-    }
-  }
+
+#  for (i in 1:length(old_subobj)) {
+#    if (class(old_subobj[[i]]) == "data.frame") {
+#      idx_old <- i
+#      break
+#    }
+#  }
   
   # TODO update this to try to pull the same gene's subobject for better comparison
   
-  for (j in 1:length(new_subobj)) {
-    if (class(new_subobj[[j]]) == "data.frame") {
-      idx_new <- j
+#  for (j in 1:length(new_subobj)) {
+#    if (class(new_subobj[[j]]) == "data.frame") {
+#      idx_new <- j
+#      break
+#    }
+#  }
+
+#  colnames_old <- colnames(old_subobj[[idx_old]])
+#  colnames_new <- colnames(new_subobj[[idx_new]])
+  
+#  cat("is identical:", identical(old_subobj, new_subobj), sep="\n- ")
+#  cat("is equal:",   all.equal(old_subobj, new_subobj), sep="\n- ")
+#  cat("Columns dropped: ", setdiff(colnames_old,colnames_new), sep="\n- ")
+#  cat("Columns added: ", setdiff(colnames_new,colnames_old), sep="\n- ")
+#}
+
+# Compares one instance of the specified subobject from the specified pair of files
+# - old   The first file's name
+# - new   The second file's name
+# - key_field The key of a unique identifier that can be used to field the same subobject in both files
+# - subname_old  The key of the subobject in the old file
+# - subname_new The key of the subobject in the new file; defaults to subname_old
+
+compare_subobjects <- function(old, new, key_field, subname_old, subname_new = subname_old) {
+  
+  old_subobjs <- old[[subname_old]]
+  new_subobjs <- new[[subname_new]]
+  
+  # Find the unique identifier of a row in the old dataframe where the subobject exists
+  for (i in 1:length(old_subobjs)) {
+    if (class(old_subobjs[[i]]) == "data.frame") {
+      
+      # capture the unique id for the subobject
+      key <- old[i,][,key_field]
+      
+      # find the index of the row with the matching key in the new dataframe
+      new_objs <- new[, key_field] ## TODO this just gives me ensg col
+      idx_new <- which(new_objs == key)
+      
+      # compare the old and new subobjects
+      old_subobj <- old_subobjs[[i]]
+      new_subobj <- new_subobjs[[idx_new]]
+      
+      colnames_old <- colnames(old_subobj)
+      colnames_new <- colnames(new_subobj)
+      
+      cat("Subobject comparison: ", "\n-new subobject:", subname_new, "\n-old subobject:", subname_old, sep=" ")
+      cat("\n\nis identical: ", identical(old_subobj, new_subobj), sep="\n- ")
+      cat("\nis equal: ",   all.equal(old_subobj, new_subobj), sep="\n- ")
+      cat("\nColumns dropped: ", setdiff(colnames_old,colnames_new), sep="\n- ")
+      cat("\nColumns added: ", setdiff(colnames_new,colnames_old), sep="\n- ")
+
       break
     }
   }
-
-  colnames_old <- colnames(old_subobj[[idx_old]])
-  colnames_new <- colnames(new_subobj[[idx_new]])
-  
-  cat("is identical:", identical(old_subobj, new_subobj), sep="\n- ")
-  cat("is equal:",   all.equal(old_subobj, new_subobj), sep="\n- ")
-  cat("Columns dropped: ", setdiff(colnames_old,colnames_new), sep="\n- ")
-  cat("Columns added: ", setdiff(colnames_new,colnames_old), sep="\n- ")
 }
-
-
 
 # Prints out a summary information about a dataframe
 # - dataframe  The dataframe to summarize
@@ -189,7 +228,6 @@ test_subobject <- function(df, subname, rules) {
   out <- confront(subdf, rules)
   print(errors(out))  # uncomment to debug rule errors
   print(summary(out))
-  
 }
 
 # Extracts the specified nested dataframe from the specified parent dataframe 

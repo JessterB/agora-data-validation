@@ -11,8 +11,8 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 source_synId <- "syn27211942" # tsv
-old_synId <-  "syn12177499" # m46 v34 Live 
-new_synId <- "syn17015360" # v48 Testing
+old_synId <-  "syn12177499.36" # m49 Live 
+new_synId <- "syn17015360" 
 
 name <- "rna_seq_differential_expression"
 
@@ -55,10 +55,7 @@ test(get(new_name), get(rules))
 # Outstanding validation failures
 ***
 
-* is_unique(model, tissue, ensembl_gene_id): 72 fails 
-
-We have identical duplicates for ENSG00000229425/AJ009632.2 (9 tissues x 4 models x 2 = 72)
-=> these duplicates should not cause issues in the app
+N/A
 
 ***
 # Validation failure investigations
@@ -151,4 +148,16 @@ nrow(rna_seq_differential_expression_old)
 ensgs <- rna_seq_differential_expression_source$ensembl_gene_id
 length(unique(ensgs))
 nrow(rna_seq_differential_expression_source)
+```
+
+TEMP
+old vs new source file: included models
+```{r}
+source <- download_file("syn14237651", type = "tsv") 
+assign(paste(name, "old_source", sep="_"), source, envir = .GlobalEnv)
+```
+
+```{r}
+unique(rna_seq_differential_expression_source$Model)
+unique(rna_seq_differential_expression_old_source$Model)
 ```

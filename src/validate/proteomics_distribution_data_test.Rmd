@@ -12,8 +12,8 @@ prepare()
 # add file-specific values here
 name <- "proteomics_distribution_data"
 # source_synId <- use proteomics and proteomics_tmt files (source or validated _new)
-old_synId <-  "syn31808319" # m46 v4 Live
-new_synId <-  "syn31510062" # v41 Testing
+old_synId <-  "syn31808319.6" # m49 Live
+new_synId <-  "syn31510062" 
 
 # not file-specific
 source_name <- paste(name, "source", sep="_")
@@ -48,6 +48,10 @@ source("~/repos/rstudio/agora-data-validation/src/rules/rules_proteomics_distrib
 test(get(new_name), get(rules))
 ```
 
+***
+# Outstanding validation failures
+***
+N/A
 
 ***
 # Validation failure investigations
