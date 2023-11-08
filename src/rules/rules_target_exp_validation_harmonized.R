@@ -23,15 +23,19 @@ rules_target_exp_validation_harmonized <- validator(
   
   #hypothesis_tested
   is.character(hypothesis_tested),
+  !field_format(hypothesis_tested, "*�*"),
   
   #model_system
   is.character(model_system),
+  !field_format(hypothesis_tested, "*�*"),
   
   #outcome_measure
   is.character(outcome_measure),
+  !field_format(hypothesis_tested, "*�*"),
   
   #outcome_measure_details
   is.character(outcome_measure_details),
+  !field_format(hypothesis_tested, "*�*"),
   
   #published
   is.character(published),
@@ -39,6 +43,7 @@ rules_target_exp_validation_harmonized <- validator(
   
   #reference
   is.character(reference),
+  !field_format(hypothesis_tested, "*�*"),
   
   #reference_doi
   is.character(reference_doi),
@@ -46,12 +51,18 @@ rules_target_exp_validation_harmonized <- validator(
   
   #species
   is.character(species),
+  !field_format(hypothesis_tested, "*�*"),
   
   #summary_findings
   is.character(summary_findings),
+  !field_format(hypothesis_tested, "*�*"),
   
   #team
   is.character(team),
-  field_length(team, min=2, max=100)
+  field_length(team, min=2, max=100),
+  
+  # multifield validation
+  if (tolower(published) == "yes") !is.na(reference),
+  if (tolower(published) == "yes") !is.na(reference_doi)
 )
 

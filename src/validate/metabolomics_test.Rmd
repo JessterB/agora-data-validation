@@ -11,8 +11,8 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 name <- "metabolomics"
-source_synId <- "syn26064497"
-old_synId <-  "syn19315964.14" # m49 Live
+source_synId <- "syn26064497.1"
+old_synId <-  "syn19315964"
 new_synId <- "syn19276330"
 
 # not file-specific

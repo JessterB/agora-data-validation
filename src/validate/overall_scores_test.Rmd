@@ -12,7 +12,7 @@ prepare()
 # file-specific
 name <- "overall_scores"
 source_synId <- "syn25575156.13"
-old_synId <-  "syn25741025.7" #m49 Live
+old_synId <-  "syn25741025"
 new_synId <-  "syn25740976"
 
 # not file-specific
@@ -59,7 +59,6 @@ test(get(new_name), get(rules))
 Note that these paired failures for GeneName & for each subscore are expected (missing hgnc, missing scores):
 * !is.na(GeneName), 	field_length(GeneName, min = 0, max = 100): 5069  (v13 source)
 * !is.na(GeneticsScore), in_range(GeneticsScore, min = 0, max = 3): 508 (v13 source)
-* !is.na(LiteratureScore), in_range(LiteratureScore, min = 0, max = 2): 16188 (v13 source)
 * !is.na(OmicsScore), in_range(OmicsScore, min = 0, max = 2): 910  (v13 source)
 
 ***
@@ -79,6 +78,29 @@ is_unique_fails
 ***
 # Other validation
 ***
+Find integer score values for AG-1072
+in updated scores data
+```{r}
+round_scores <- c(1, 2, 3, 4, 5, 6, 7)
+overall_scores_new[overall_scores_new$genetics_score %in% round_scores,]
+overall_scores_new[overall_scores_new$multi_omics_score %in% round_scores,]
+overall_scores_new[overall_scores_new$target_risk_score %in% round_scores,]
+```
+
+
+in legacy scores data
+```{r}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+source <- download_file('syn25741025.7', overall_scores_legacy)
+assign('overall_scores_legacy', source, envir = .GlobalEnv)
+```
+```{r}
+round_scores <- c(1, 2, 3, 4, 5, 6, 7)
+overall_scores_legacy[overall_scores_legacy$GeneticsScore %in% round_scores,]
+overall_scores_legacy[overall_scores_legacy$OmicsScore %in% round_scores,]
+overall_scores_legacy[overall_scores_legacy$Logsdon %in% round_scores,]
+overall_scores_legacy[overall_scores_legacy$LiteratureScore %in% round_scores,]
+```
 
 Find a null score for scores update
 ```{r}
@@ -314,4 +336,9 @@ nas <- overall_scores_source[is.na(overall_scores_source$FlyNeuroPathScore),]
 print(nas)
 zeros <- overall_scores_source[overall_scores_source$FlyNeuroPathScore == 0,]
 print(zeros)
+```
+
+```{r}
+
+
 ```

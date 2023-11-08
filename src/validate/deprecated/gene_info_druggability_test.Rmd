@@ -1,0 +1,89 @@
+---
+title: "gene_info_druggability_test"
+---
+
+## DEPRECATED - subobject validation has been rolled into gene_info_test, saving this for now in case I missed anything
+
+
+```{r eval=FALSE, echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+prepare()
+```
+
+# Validation run metadata
+```{r echo=FALSE}
+# file-specific
+name <- "gene_info"
+sub_name <- "druggability"
+source_synId <- "syn13363443.11" # druggability_genomewide.csv
+old_synId <-  "syn12548902"
+new_synId <- "syn17015359" 
+
+# not file-specific
+old_name <- paste(name, "old", sep="_")
+new_name <- paste(name, "new", sep="_")
+rules <- paste0("rules_gene_info_", sub_name)
+
+# print validation summary
+cat( name, ".json", "\nReported on:  ", date(),
+    "\nold: ", old_synId, " \nnew: ", new_synId,
+    sep="")
+```
+
+# Downloaded files to compare
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+download_files(old_synId, new_synId, name)
+```
+
+# Download source files
+```{r}
+source <- download_file(source_synId, type = "csv") 
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+```
+
+## Compare old & new subobjects
+
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+compare_subobjects(get(old_name), get(new_name), "ensembl_gene_id", "druggability")
+```
+
+## Validate subobjects against rules
+
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info_druggability.R")
+test_subobject(get(new_name), "druggability", get(rules))
+```
+
+***
+# Outstanding validation failures
+***
+None
+
+***
+# Validation failure investigations
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(VALIDATION_RULE)
+cf <- confront(DATAFRAME, v)
+out <- values(cf)
+is_unique_fails <- DATAFRAME[!out,]
+is_unique_fails
+```
+
+
+gene_info field name refactor (AG-1161) - ENSG dropped
+```{r}
+new <- get_subobject(gene_info_new, subname = "druggability")
+old <- get_subobject(gene_info_old_modified, subname = "druggability")
+
+drops <- "geneid"
+old <- old[, !(names(old) %in% drops)]
+
+new
+old
+
+setdiff(new, old)
+```

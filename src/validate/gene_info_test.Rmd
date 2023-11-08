@@ -18,16 +18,25 @@ prepare()
 name <- "gene_info"
 
 # source files
-gene_source_synId <- "syn25953363.4" # gene_table_merged.feather
+gene_source_synId <- "syn25953363.6" # gene_table_merged.feather
 igap_source_synId <- "syn12514826.4" # igap_genetic_association_genes.csv
 eqtl_source_synId <- "syn12514912.3" # eqtl_meta_analysis.csv
 proteomics_source_synId <- "syn18689335.3" # Final_Agora_DE.csv
 proteomics_tmt_source_synId <- "syn35221005.2" # ROSMAP_DiffExp_TMTproteins.csv
 rna_de_source_synId <- "syn27211942.1" # differentialExpressionSummary.tsv
+target_list_source_synId <- "syn12540368.41" #harmonized_targets_20230926.csv
+target_exp_val_synId <- "syn24184512.6" # Agora_target_exp_validation_harmonized.csv
+ter_source_synId <- "syn51942280.1" #tep_adi_info.csv
 
 # json files
-old_synId <-  "syn12548902.39" # m49 Live
+old_synId <-  "syn12548902"
 new_synId <- "syn17015359" 
+
+# sub-object rules files
+target_nominations_rules <- paste0("rules_", name, "_target_nominations")
+median_expression_rules <- paste0("rules_", name, "_median_expression")
+druggability_rules <- paste0("rules_", name, "_druggability")
+ensembl_info_rules <- paste0("rules_", name, "_ensembl_info")
 
 # not file-specific
 old_name <- paste(name, "old", sep="_")
@@ -48,49 +57,116 @@ download_files(old_synId, new_synId, name)
 
 # Download source files
 ```{r}
+# gene_source
 gene <- download_file(gene_source_synId, type = "f") 
-assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+assign(paste("gene", "source", sep="_"), gene, envir = .GlobalEnv)
+# igap_source
 igap <- download_file(igap_source_synId, type = "csv") 
-assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+assign(paste("igap", "source", sep="_"), igap, envir = .GlobalEnv)
+# eqtl_source
 eqtl <- download_file(eqtl_source_synId, type = "csv") 
-assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+assign(paste("eqtl", "source", sep="_"), eqtl, envir = .GlobalEnv)
+# lfq_source
 proteomics <- download_file(proteomics_source_synId, type = "csv") 
-assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+assign(paste("lfq", "source", sep="_"), proteomics, envir = .GlobalEnv)
+# tmt_source
 proteomics_tmt <- download_file(proteomics_tmt_source_synId, type = "csv") 
-assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+assign(paste("tmt", "source", sep="_"), proteomics_tmt, envir = .GlobalEnv)
+# rna_de_source
 rna_de <- download_file(rna_de_source_synId, type = "tsv") 
-assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+assign(paste("rna_de", "source", sep="_"), rna_de, envir = .GlobalEnv)
+#nominations source
 ```
+
+```{r}
+# target list
+targets <- download_file(target_list_source_synId, type="csv")
+assign(paste("target_list", "source", sep="_"), targets, envir = .GlobalEnv)
+```
+
+
+```{r}
+# experimental validations source
+exp_val <- download_file(target_exp_val_synId, type="csv")
+assign(paste("exp_val", "source", sep="_"), exp_val, envir = .GlobalEnv)
+```
+
 
 # Compared old & new files
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare(get(old_name), get(new_name), name)
+compare(get(old_name), get(new_name), name, sort_by_ensg=TRUE)
+```
+
+# Compare old & new subobjects - not exhaustive - picks one populated subobject and compares across the old and new files
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+cat("\n***target_nominations***\n")
+compare_subobjects(get(old_name), get(new_name), "ensembl_gene_id", "target_nominations")
+cat("\n***median_expression***\n")
+compare_subobjects(get(old_name), get(new_name), "ensembl_gene_id", "median_expression")
+cat("\n***druggability***\n")
+compare_subobjects(get(old_name), get(new_name), "ensembl_gene_id", "druggability")
+cat("\n***ensembl_info***\n")
+compare_subobjects(get(old_name), get(new_name), "ensembl_gene_id", "ensembl_info")
 ```
 
 # Validated new file against rules
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info_target_nominations.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info_median_expression.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info_druggability.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info_ensembl_info.R")
+
 test(get(new_name), get(rules))
+test_subobject(gene_info_new, "target_nominations", get(target_nominations_rules))
+test_subobject(gene_info_new, "median_expression", get(median_expression_rules))
+test_subobject(gene_info_new, "druggability", get(druggability_rules))
+test_subobject(gene_info_new, "ensembl_info", get(ensembl_info_rules))
 ```
 
 ***
 # Outstanding validation failures
 ***
-* !is.na(hgnc_symbol)/field_length(hgnc_symbol, min = 0, max = 100): 19367 - NA values
-* !is.na(nominations)/nominations > 0/lengths(nominatedtarget) > 0: 67979 fails (only expect nominated targets to pass this one)
-* !is.na(name)/field_length(name, min = 0, max = 200): 19368 - NA values
-* !is.na(summary): 44167 fails - NA values
+gene_info
+* !is.na(hgnc_symbol)/field_length(hgnc_symbol, min = 0, max = 100): 
+20662 - NA values
+* !is.na(name)/field_length(name, min = 0, max = 200): 
+20663 - NA values
+* !is.na(nominations)/nominations > 0/lengths(nominatedtarget) > 0: 
+69769 fails (only expect nominated targets to pass this one)
+* !is.na(summary): 
+45965 fails - NA values
+
+target_nominations
+* !is.na(data_synapseid)/field_length(data_synapseid, min = 3, max = 25) 
+127 fails -> NA values are properly handled by the app -> 49 TODO
+* !is.na(data_used_to_support_target_selection)/field_length(data_used_to_support_target_selection, min = 15, max = 2000)
+2 fails -> NA values (handled via AG-850)
+* !is.na(study)/field_length(study, min = 2, max = 200)
+7 fails -> NA values - see https://sagebionetworks.jira.com/browse/AG-846
+* !is.na(validation_study_details)/field_length(validation_study_details, min = 0, max = 1000)
+130 fails -> NA values - see https://sagebionetworks.jira.com/browse/AG-846
+
+median_expression
+* none
+
+druggability
+* none
+
+ensembl_info
+* none
 
 ***
 # Validation failure investigations
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule
-v <- validator(VALIDATION_RULE)
-cf <- confront(DATAFRAME, v)
+v <- validator(grepl("INPP5D", resource_url, fixed = TRUE))
+cf <- confront(gene_info_new, v)
 out <- values(cf)
-is_unique_fails <- DATAFRAME[!out,]
+is_unique_fails <- gene_info_new[!out,]
 is_unique_fails
 ```
 
@@ -134,8 +210,310 @@ gene_info_old[gene_info_old$ensembl_gene_id == "ENSG00000002933",]
 
 
 ***
-Misc investigations
+Misc investigations/validation
 ***
+
+## GENE_INFO
+
+## Nomination stats
+TODO update "new" nominatedtarget -> target_nominations next time
+
+```{r}
+# old = ALD current RC json, new = ALD last released json
+sorted_old <- subset(gene_info_old %>% arrange(TRUE), select = c(ensembl_gene_id, target_nominations))
+sorted_new <- subset(gene_info_new %>% arrange(TRUE), select = c(ensembl_gene_id, nominatedtarget))
+ 
+old <- sorted_old[!is.na(replace_null(sorted_old)$target_nominations),]
+new <- sorted_new[!is.na(replace_null(sorted_new)$nominatedtarget),]
+
+# SOURCES
+# use pinned source files used to generate old and new json
+target_list_source_old <- download_file("syn12540368.41", "target_list_source_old", type="csv")
+target_list_source_new <- download_file("syn12540368.36", "target_list_source_new", type="csv")
+
+#OLD
+# total # expected nominations (old source)
+expected_noms_old <- length(target_list_source_old$hgnc_symbol)
+cat("\ntotal # expected nominations (old source): ", expected_noms_old)
+
+# total # expected nominated targets (old source)
+expected_targets_old <- length(unique(target_list_source_old$ensembl_gene_id))
+cat("\ntotal # expected nominated targets (old source): ", expected_targets_old)
+
+#total actual nominations (old json)
+flat_noms_old <- tidyr::unnest(old, target_nominations)
+old_noms <- nrow(flat_noms_old)
+cat("\ntotal actual nominations (old json): ", old_noms)
+
+# total actual nominated targets (old json)
+old_targets <- length(unique(old$ensembl_gene_id))
+cat("\ntotal actual nominated targets (old json): ", old_targets)
+
+# total actual # genes (old json)
+old_genes <- length(unique(gene_info_old$ensembl_gene_id))
+cat("\ntotal actual # genes (old json): ", old_genes, "\ntotal and unique equal: ", length(gene_info_old$ensembl_gene_id) == length(unique(gene_info_old$ensembl_gene_id)))
+
+
+# total # expected nominations (new source)
+expected_noms_new <- length(target_list_source_new$hgnc_symbol)
+cat("\ntotal # expected nominations (new source): ", expected_noms_new)
+
+# total # expected nominated targets (new source)
+expected_targets_new <- length(unique(target_list_source_new$ensembl_gene_id))
+cat("\ntotal # expected nominated targets (new source): ", expected_targets_new)
+
+# NEW
+
+#total actual nominations (old json)
+flat_noms_new <- tidyr::unnest(new, nominatedtarget,names_sep=".")
+new_noms <- nrow(flat_noms_new)
+cat("\ntotal actual nominations (new json): ", new_noms)
+
+# total actual nominated targets (old json)
+new_targets <- length(unique(new$ensembl_gene_id))
+cat("\ntotal actual nominated targets (new json): ", new_targets)
+
+# total actual # genes (new json)
+new_genes <- length(unique(gene_info_new$ensembl_gene_id))
+cat("\ntotal actual # genes (new json): ", new_genes, "\ntotal and unique equal: ", length(gene_info_new$ensembl_gene_id) == length(unique(gene_info_new$ensembl_gene_id)))
+
+```
+
+
+## TER boolean and resource_url initial validation 3.3.0
+
+```{r}
+# get all rows where either TER boolean is true
+has_tep <- gene_info_new[gene_info_new$is_tep == TRUE,]
+has_adi <- gene_info_new[gene_info_new$is_adi == TRUE,]
+has_ter_with_dups <- rbind(has_tep, has_adi)
+has_ter <- has_ter[!duplicated(has_ter$ensembl_gene_id),] #remove dups (both booleans TRUE)
+has_ter #should match nrows from source data - but 115/118 -> AG-1191
+
+# ensure resource_url is populated for all rows where either TER boolean is true
+missing_resource_urls <- has_ter[is.na(has_ter$resource_url),]
+interesting_fields <- c("ensembl_gene_id", "hgnc_symbol", "is_tep", "is_adi", "resource_url")
+ters_missing_resource_urls <- missing_resource_urls[interesting_fields]
+ters_missing_resource_urls # should be empty - and it is!
+
+# ensure all genes from the source file are included
+source_hgnc <- ter_source$hgnc_symbol
+processed_hgnc <- has_ter$hgnc_symbol
+setdiff(source_hgnc, processed_hgnc)
+# "DOCK1" "EZR" "HSPB2" missing why? FALSE FALSE in source data, but on ADI list in the portal...AG-1191
+
+# sanity check URLs
+url_fields <- c("hgnc_symbol", "resource_url")
+urls <- has_ter[url_fields]
+urls[27,]
+
+# sanity check target #s
+cat("\nADI targets", nrow(has_adi))
+cat("\nTEP targets", nrow(has_tep))
+cat("\nTotal targets", nrow(has_ter))
+
+# sanity check against source file
+ter_fields <- c("ensembl_gene_id", "is_tep", "is_adi")
+has_ter_trimmed <- has_ter[ter_fields]
+joined <- full_join(has_ter_trimmed, ter_source, by = "ensembl_gene_id")
+joined
+```
+
+## Gene source ENSG release/replacement values
+Stats
+```{r}
+gene_source
+cat("\n***ensembl_release***")
+cat("\nunique values: ", unique(gene_source$ensembl_release))
+cat("\nnumber of targets with NA value: ", nrow(gene_source[is.na(gene_source$ensembl_release),]))
+cat("\nnumber of targets with blank value: ", nrow(gene_source[gene_source$ensembl_release == '',]))
+
+cat("\n***permalink***")
+cat("\nnumber of targets with NA value: ", nrow(gene_source[is.na(gene_source$permalink),]))
+cat("\nnumber of targets with blank value: ", nrow(gene_source[gene_source$permalink == '',]))
+
+cat("\n***possible_replacement***")
+flat_pr <- unnest(gene_source, possible_replacement)
+cat("\ntotal number of values: ", nrow(flat_pr))
+cat("\nunique values:", length(unique(flat_pr$possible_replacement)))
+cat("\nnumber of targets with replacement value(s): ", sum(lengths(gene_source$possible_replacement) > 0))
+cat("\nnumber of targets with NA value: ", nrow(gene_source[is.na(gene_source$possible_replacement),]))
+cat("\nnumber of targets with empty list value: ", sum(lengths(gene_source$possible_replacement) == 0), "/", nrow(gene_source))
+
+cat("\n***ensembl releases***")
+cat("\nnumber of targets with NA value: ", nrow(gene_source[is.na(gene_source$ensembl_release),]))
+cat("\nnumber of targets with blank value: ", nrow(gene_source[gene_source$ensembl_release =='',]))
+
+
+cat("\n***Replacements with gene details pages in Agora")
+unique_prs <- unique(flat_pr$possible_replacement)
+unique_ensgs <- gene_info_new$ensembl_gene_id
+# in PRs, not in ENSGs
+missing <- setdiff(unique_prs, unique_ensgs)
+cat("\nPRs missing in Agora: ", missing)
+```
+What ensembl release are the duplicate SRM rows from (AG-1296) ?
+IPTK1: ENSG00000100605, ENSG00000274958
+LDHA: ENSG00000134333, ENSG00000288299
+MAPT: ENSG00000186868, ENSG00000277956, ENSG00000276155
+NDUFA6: ENSG00000184983, ENSG00000272765, ENSG00000277365, ENSG00000281013, ENSG00000273397
+PTPRD: ENSG00000153707, ENSG00000282932
+PVALB: ENSG00000100362, ENSG00000274665
+RUVBL1: ENSG00000175792, ENSG00000284901
+
+```{r}
+# IPTK
+IPTK1 <- gene_info_new[gene_info_new$ensembl_gene_id == "ENSG00000282932",]
+IPTK2 <- gene_info_new[gene_info_new$ensembl_gene_id == "ENSG00000274958",]
+IPTK1_ensembl_info <- data.frame(IPTK1$ensembl_info)
+IPTK2_ensembl_info <- data.frame(IPTK2$ensembl_info)
+cat("\nIPTK ensembl_gene_id: ",  IPTK1$ensembl_gene_id, " ensembl release: ", IPTK1_ensembl_info$ensembl_release)
+cat("\nIPTK ensembl_gene_id: ",  IPTK2$ensembl_gene_id, " ensembl release: ", IPTK2_ensembl_info$ensembl_release)
+```
+
+
+
+What gene(s) has a particular PR?
+
+```{r}
+
+flat_pr[flat_pr$possible_replacement == "ENSG00000289022",]
+
+```
+
+
+Target distribution across releases
+```{r}
+latest <- '110'
+releases <- c("109", "106", "84",  "105", "91",  "104", "99",  "96",  "87",  "103", "93",  "80",  "95",  "102", "107", "98",  "100", "97",  "82",  "89", "101", "108", "81")
+
+cat("number of targets in latest release: ", nrow(gene_source[gene_source$ensembl_release =='110',]))
+
+release_distribution <- data.frame(ensembl_release = character(), n_targets = integer())
+ensgs_in_missing_releases <- data.frame(ensembl_release = character(), ensembl_gene_id = character())
+
+cat("\ntargets per release")
+for (release in releases) {
+  targets <- gene_source[gene_source$ensembl_release == release,]
+  #cat("\nRelease ", release, ": ", nrow(targets), " targets")
+  row <- data.frame(ensembl_release = release, n_targets = nrow(targets))
+  release_distribution <- bind_rows(release_distribution, row)
+  
+  
+  
+  if (release > 80 && release < 93) {
+    cat("\ntargets in missing release", release)
+    repl_targets <- gene_source[lengths(gene_source$possible_replacement) == 0,]
+    ensgs <- repl_targets$ensembl_gene_id
+
+    for (ensg in ensgs) {
+      cat("\ntarget ", ensg)
+      rep_rows <- flat_pr[flat_pr$ensembl_gene_id == ensg,]
+  
+    }
+  }
+}
+
+print(release_distribution)
+print(ensgs_in_missing_releases)
+```
+
+Do we have gene details pages for all possible replacement values?
+```{r}
+
+```
+
+What info do we have for retired ENSGs?
+```{r}
+retired <- gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000281027',]
+retired
+```
+
+
+## RNA changed boolean update (AG-872)
+```{r}
+rna_changed_new <- gene_info_new[gene_info_new$isAnyRNAChangedInADBrain == TRUE,]
+rna_not_changed_new <- gene_info_new[gene_info_new$isAnyRNAChangedInADBrain == FALSE,]
+
+rna_studied_new <- gene_info_new[gene_info_new$rna_brain_change_studied == TRUE,]
+rna_not_studied_new <- gene_info_new[gene_info_new$rna_brain_change_studied == FALSE,]
+
+rna_changed_old <- gene_info_old[gene_info_old$isAnyRNAChangedInADBrain == TRUE,]
+rna_not_changed_old <- gene_info_old[gene_info_old$isAnyRNAChangedInADBrain == FALSE,]
+
+rna_studied_old <- gene_info_old[gene_info_old$rna_brain_change_studied == TRUE,]
+rna_not_studied_old <- gene_info_old[gene_info_old$rna_brain_change_studied == FALSE,]
+
+cat("\nchanged new: ", nrow(rna_changed_new))
+cat("\nchanged old: ", nrow(rna_changed_old))
+
+cat("\nnot changed new: ", nrow(rna_not_changed_new))
+cat("\nnot changed old: ", nrow(rna_not_changed_old))
+
+cat("\nstudied new: ", nrow(rna_studied_new))
+cat("\nstudied old: ", nrow(rna_studied_old))
+
+cat("\nnot studied new: ", nrow(rna_not_studied_new))
+cat("\nnot studied old: ", nrow(rna_not_studied_old))
+
+rna_changed_not_studied_new <- rna_changed_new[rna_changed_new$rna_brain_change_studied == FALSE,]
+cat("\nchanged but not studied new: ", nrow(rna_changed_not_studied_new))
+
+rna_changed_not_studied_old <- rna_changed_old[rna_changed_old$rna_brain_change_studied == FALSE,]
+cat("\nchanged but not studied old: ", nrow(rna_changed_not_studied_old))
+
+not_studied_ensgs <- rna_not_studied_new$ensembl_gene_id
+not_changed_ensgs <- rna_not_changed_new$ensembl_gene_id
+
+setdiff(not_studied_ensgs, not_changed_ensgs)
+
+```
+
+## EQTL refresh validation (AG-1001)
+```{r}
+source_all_ensgs <- eqtl_source$ensembl_gene_id
+
+source_has_eqtl <- eqtl_source[eqtl_source$has_eqtl == 'True',]
+source_has_eqtl_ensgs <- source_has_eqtl$ensembl_gene_id
+
+gene_info_all_ensgs <- gene_info_new$ensembl_gene_id
+
+gene_info_has_eqtl <- gene_info_new[gene_info_new$haseqtl == TRUE, ]
+gene_info_has_eqtl_ensgs <- gene_info_has_eqtl$ensembl_gene_id
+
+
+
+print("# ENSGs in source")
+length(source_all_ensgs)
+
+print("# ENSGs in generated")
+length(gene_info_all_ensgs)
+
+print("ENSGs in source (all) but not in generated (all)")
+length(setdiff(source_all_ensgs, gene_info_all_ensgs))
+
+print("ENSGs in generated (all) but not in source (all)")
+length(setdiff(gene_info_all_ensgs, source_all_ensgs))
+
+print("# ENSGs in source with eqtl == 'True'")
+print(length(source_has_eqtl_ensgs))
+print("uniques")
+print(length(unique(source_has_eqtl_ensgs)))
+
+print("# ENSGs in generated with eqtl == TRUE")
+print(length(gene_info_has_eqtl_ensgs))
+print("uniques")
+print(length(unique(gene_info_has_eqtl_ensgs)))
+
+print("has_eqtl ENSGs in source but not in generated")
+length(setdiff(source_has_eqtl_ensgs, gene_info_has_eqtl_ensgs))
+
+print("has_eqtl ENSGs in generated but not in source")
+length(setdiff(gene_info_has_eqtl_ensgs, source_has_eqtl_ensgs))
+
+```
+
+
 ## Poster stats
 ```{r}
 nominated_targets_new <- get_subobject(gene_info_new, "nominatedtarget")
@@ -543,3 +921,361 @@ plec <- gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000178209',]
 plec$nominatedtarget
 ```
 
+
+----
+Investigate unexpected component mismatches from compare
+```{r}
+old_sorted <- gene_info_old %>% arrange(ensembl_gene_id)
+new_sorted <- gene_info_new %>% arrange(ensembl_gene_id)
+old_sorted
+new_sorted
+```
+
+```{r}
+new_sorted[new_sorted$ensembl_gene_id=='ENSG00000000003',]
+old_sorted[old_sorted$ensembl_gene_id=='ENSG00000000003',]
+```
+
+
+gene_table_merged_feather v4->v6 update - sanity check
+
+source files 
+
+2122 new rows (genes) added
+
+common columns:
+- "ensembl_gene_id" 
+- "alias"           
+- "name"            
+- "summary"         
+- "symbol"          
+- "type_of_gene"   
+
+new columns: 
+- "ensembl_release" - introduced for future ensembl release handing feature     
+- "possible_replacement" - introduced for future ensembl release handing feature 
+- "permalink"  - introduced for future ensembl release handing feature          
+- "__index_level_0__" - no idea what this is 
+
+dropped columns:
+ - "index"  - just the row number, we don't use it
+ - "_id"    - no idea what this is
+ - "_version" - no idea what this is for, but it's always 1
+ - "notfound" - no idea what this is for, but it's either NA or TRUE
+ 
+ 
+interesting columns (per custom transform) -> we still have the columns that matter:
+            "ensembl_gene_id",
+            "name",
+            "summary",
+            "symbol",
+            "alias",
+            --- below are from other source files ---
+            "is_igap",
+            "has_eqtl",
+            "rna_in_ad_brain_change",
+            "rna_brain_change_studied",
+            "protein_in_ad_brain_change",
+            "protein_brain_change_studied",
+            "nominated_target",
+            "median_expression",
+            "druggability",
+            "nominations",
+
+
+colnames v4:  index ensembl_gene_id _id _version alias name summary symbol type_of_gene notfound
+colnames v6:  ensembl_gene_id name symbol type_of_gene alias summary ensembl_release possible_replacement permalink __index_level_0__
+```{r}
+gene4 <- download_file("syn25953363.4", type="f")
+assign("gene4_f", gene4, envir = .GlobalEnv)
+
+gene6 <- download_file("syn25953363.6", type="f")
+assign("gene6_f", gene6, envir = .GlobalEnv)
+```
+
+```{r}
+gene4_fs <- gene4_f[order(gene4_f$ensembl_gene_id),]
+gene6_fs <- gene6_f[order(gene6_f$ensembl_gene_id),]
+cat("\nnrow v4: ", nrow(gene4_fs))
+cat("\nnrow v6: ", nrow(gene6_fs))
+cat("\ncolnames v4: ", colnames(gene4_fs))
+cat("\ncolnames v6: ", colnames(gene6_fs))
+print(gene4_fs)
+print(gene6_fs)
+```
+
+AG-896 gene source update
+digging into change in number of rows that doesn't seem to add up
+```{r}
+old_ensgs <- gene_info_old$ensembl_gene_id
+new_ensgs <- gene_info_new$ensembl_gene_id
+
+source_ensgs <- gene_source$ensembl_gene_id
+old_source_ensgs <- old_gene_source$ensembl_gene_id
+
+setdiff(old_source_ensgs, old_ensgs)
+setdiff(source_ensgs, new_ensgs)
+
+
+length(new_ensgs)
+length(source_ensgs)
+length(old_ensgs)
+length(old_source_ensgs)
+
+```
+
+are there dups?
+-> no
+```{r}
+
+length(unique(new_ensgs))
+length(unique(source_ensgs))
+length(unique(old_ensgs))
+length(unique(old_source_ensgs))
+```
+
+are there nas? -> no
+
+```{r}
+gene_info_old[is.na(gene_info_old$ensembl_gene_id),]
+gene_info_new[is.na(gene_info_new$ensembl_gene_id),]
+
+gene_source[is.na(gene_source$ensembl_gene_id),]
+old_gene_source[is.na(old_gene_source$ensembl_gene_id),]
+```
+
+what are the 272 mismatching ensgs?
+
+```{r}
+diff_ensgs <- setdiff(old_ensgs, old_source_ensgs)
+
+gene_info_old[gene_info_old$ensembl_gene_id %in% diff_ensgs,]
+
+```
+
+Were these introduced to gene_info via the eqtl refresh?
+```{r}
+gene_info_eqtl_after_synId <- "syn17015359.180"
+gene_info_eqtl_before_synId <- "syn17015359.175"
+
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+download_files(gene_info_eqtl_before_synId, gene_info_eqtl_after_synId, "gene_info_refresh")
+```
+
+```{r}
+gene_info_refresh_new
+gene_info_refresh_old
+```
+
+poster stats
+```{r}
+nrow(gene_info_new)
+length(unique(gene_info_new$ensembl_gene_id))
+```
+
+```{r}
+noms <- gene_info_new[!is.na(gene_info_new$nominations),]
+n <- unnest(noms, cols='nominatedtarget', names_repair = "minimal")
+n
+```
+
+```{r}
+n_amp <- n[n$source == "AMP-AD",]
+length(unique(n_amp$ensembl_gene_id))
+n_treat <- n[n$source == "TREAT-AD",]
+length(unique(n_treat$ensembl_gene_id))
+n_cn <- n[n$source == "Community",]
+length(unique(n_cn$ensembl_gene_id))
+n_cn <- n[n$source == "Resilience-AD",]
+length(unique(n_cn$ensembl_gene_id))
+```
+
+```{r}
+n[n$ensembl_gene_id == 'ENSG00000006125',]
+```
+
+```{r}
+counts <- target_list_source %>% count(ensembl_gene_id)
+counts
+counts[counts$n > 1,]
+
+```
+
+
+biodomains validation
+```{r}
+bio_old <- gene_info_old$biodomains
+bio_new <- gene_info_new$biodomains
+
+bio_comp <- cbind(bio_old, bio_new)
+
+bio_comp
+```
+
+medianexpression values
+
+15,880/24,395 genes biggest ME value is < 2.3
+1,443/24,395 genes biggest ME value is < 0.25
+808/24,395 genes biggest ME value is < 0.15
+
+```{r}
+me_df <- subset(gene_info_new, select=c(medianexpression))
+me_flat <- tidyr::unnest(me_df)
+me <- subset(me_flat, select=c(ensembl_gene_id, medianlogcpm))
+
+print(me)
+
+me_min <- me %>% group_by(ensembl_gene_id) %>% summarise(min = min(medianlogcpm))
+print(me_min)
+
+me_max <- me %>% group_by(ensembl_gene_id) %>% summarise(max = max(medianlogcpm))
+
+me_max[me_max$max > 2.3, ]
+me_max[me_max$max < 0.25, ]
+me_max[me_max$max < 0.1, ]
+```
+
+
+```{r}
+print(target_list_source)
+```
+
+## TARGET_NOMINATIONS
+
+## New TREAT-AD nominations - AG-667
+```{r}
+nominated_targets_new <- get_subobject(gene_info_new, "nominatedtarget")
+nominated_targets_old <- get_subobject(gene_info_old, "nominatedtarget")
+
+ensg_new <- nominated_targets_new$ensembl_gene_id
+ensg_old <- nominated_targets_old$ensembl_gene_id
+
+new_ensgs <- setdiff(ensg_new, ensg_old)
+missing_ensgs <- setdiff(ensg_old, ensg_new)
+
+new_ensgs
+missing_ensgs
+```
+
+## AG-771: TREAT-AD nominations - unicode replacement character
+```{r}
+#ensg <- "ENSG00000127666"
+#ensg <- "ENSG00000115267"
+#ensg <- "ENSG00000120915"
+#ensg <- "ENSG00000108771"
+#ensg <- "ENSG00000079785"
+ensg <- "ENSG00000116584"
+new <- gene_info_new[gene_info_new$ensembl_gene_id == ensg,]
+old <- gene_info_old[gene_info_old$ensembl_gene_id == ensg,]
+identical(new, old)
+nom_new <- new$nominatedtarget
+nom_old <- old$nominatedtarget
+print(nom_new)
+print(nom_old)
+```
+
+
+## AG-674: unicode replacement character
+```{r}
+#ensg <- "ENSG00000089169"
+#ensg <- "ENSG00000131095"
+#ensg <- "ENSG00000147065"
+#ensg <- "ENSG00000163884"
+#ensg <- "ENSG00000025434"
+ensg <- "ENSG00000131408"
+new <- gene_info_new[gene_info_new$ensembl_gene_id == ensg,]
+old <- gene_info_old[gene_info_old$ensembl_gene_id == ensg,]
+identical(new, old)
+nom_new <- new$nominatedtarget
+nom_old <- old$nominatedtarget
+print(nom_new)
+print(nom_old)
+```
+
+# backslash testing - TODO figure out how to make this work
+to hack source file to add a \ for testing:
+nominated_targets$predicted_therapeutic_direction[[1]] =  "Antagonism predicted to reduce disease \u524progression. "
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+# v <- validator(!field_format(predicted_therapeutic_direction, "*\\u0524*", type = "regex"))
+# v <- validator(!field_format(predicted_therapeutic_direction, "*\\*", type = "regex"))
+# v <- validator(!field_format(predicted_therapeutic_direction, "*\\\\*", type = "regex"))
+# v <- validator(!field_format(predicted_therapeutic_direction, "*\\\\\\*", type = "regex"))
+v <- validator(!field_format(predicted_therapeutic_direction, "*[\\]*"))
+
+cf <- confront(nominated_targets, v)
+out <- values(cf)
+is_unique_fails <- nominated_targets[!out,]
+# is_unique_fails <- nominated_targets[is.na(out),] # use this for nNA failures
+is_unique_fails
+```
+
+gene_info field name refactor (AG-1161) - ENSG dropped, colrenames
+```{r}
+new <- get_subobject(gene_info_new, subname = "target_nominations")
+old <- get_subobject(gene_info_old_modified, subname = "nominatedtarget")
+
+drops <- "ensembl_gene_id"
+old <- old[, !(names(old) %in% drops)]
+
+new
+old
+
+setdiff(new, old)
+```
+
+## MEDIAN_EXPRESSION
+
+## medianexpression: is_unique(ensembl_gene_id, tissue) -> 18 fails (7/19/22)
+
+https://sagebionetworks.jira.com/browse/AG-547 - dup records => RESOLVED
+
+```{r}
+subobj <- get_subobject(gene_info_new, "medianexpression")
+v <- validator(is_unique(ensembl_gene_id, tissue))
+cf <- confront(subobj, v)
+out <- values(cf)
+is_unique_fails <- subobj[!out,]
+is_unique_fails
+is_unique_fails[order(is_unique_fails$tissue),]
+```
+
+gene_info field name refactor (AG-1161) - ENSG dropped, colrenames
+```{r}
+new <- get_subobject(gene_info_new, subname = "median_expression")
+old <- get_subobject(gene_info_old_modified, subname = "medianexpression")
+
+drops <- "ensembl_gene_id"
+old <- old[, !(names(old) %in% drops)]
+
+new <- new %>% 
+  rename(
+    minimumlogcpm = min,
+    quartile1logcpm = first_quartile,
+    medianlogcpm = median,
+    meanlogcpm = mean,
+    quartile3logcpm = third_quartile,
+    maximumlogcpm = max
+  )
+
+new
+old
+
+setdiff(new, old)
+```
+
+## DRUGGABILITY
+
+gene_info field name refactor (AG-1161) - ENSG dropped
+```{r}
+new <- get_subobject(gene_info_new, subname = "druggability")
+old <- get_subobject(gene_info_old_modified, subname = "druggability")
+
+drops <- "geneid"
+old <- old[, !(names(old) %in% drops)]
+
+new
+old
+
+setdiff(new, old)
+```

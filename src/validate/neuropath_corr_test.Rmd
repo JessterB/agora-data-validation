@@ -11,8 +11,8 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 name <- "neuropath_corr"
-source_synId <- "syn22017882"
-old_synId <-  "syn22167182.13" #m49 Live 
+source_synId <- "syn22017882.5"
+old_synId <-  "syn22167182" 
 new_synId <-  "syn22130742" 
 
 # not file-specific

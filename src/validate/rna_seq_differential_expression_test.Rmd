@@ -10,8 +10,8 @@ prepare()
 # Validation run metadata
 ```{r echo=FALSE}
 # file-specific
-source_synId <- "syn27211942" # tsv
-old_synId <-  "syn12177499.36" # m49 Live 
+source_synId <- "syn27211942.1" # tsv
+old_synId <-  "syn12177499" 
 new_synId <- "syn17015360" 
 
 name <- "rna_seq_differential_expression"
@@ -43,6 +43,7 @@ assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 compare(get(old_name), get(new_name), name)
 ```
+
 
 # Validated new file against rules
 ```{r echo=FALSE}
@@ -109,6 +110,24 @@ print(rosmap)
 # Other Validation
 ***
 
+# 3.3.0 setdiff
+```{r}
+setdiff(rna_seq_differential_expression_new, rna_seq_differential_expression_old)
+setdiff(rna_seq_differential_expression_old, rna_seq_differential_expression_new)
+
+gene_new <- rna_seq_differential_expression_new[rna_seq_differential_expression_new$ensembl_gene_id =="ENSG00000163221",]
+gene_old <- rna_seq_differential_expression_old[rna_seq_differential_expression_old$ensembl_gene_id =="ENSG00000163221",]
+
+row_new <- gene_new[gene_new$tissue=="CBE",]
+row_old <- gene_old[gene_old$tissue=="CBE",]
+
+gene_join <- merge(gene_old, gene_new, by=c("ensembl_gene_id", "tissue", "model"), all = TRUE)
+
+gene_new$match <- Reduce(`&`, Map(`==`, gene_new, gene_old))
+
+gene_new
+gene_join
+```
 
 # l2fc and pval distributions (opacity and diameter tuning)
 
@@ -160,4 +179,15 @@ assign(paste(name, "old_source", sep="_"), source, envir = .GlobalEnv)
 ```{r}
 unique(rna_seq_differential_expression_source$Model)
 unique(rna_seq_differential_expression_old_source$Model)
+```
+
+
+
+
+
+
+poster stats
+```{r}
+nrow(rna_seq_differential_expression_new)
+length(unique((rna_seq_differential_expression_new$ensembl_gene_id)))
 ```

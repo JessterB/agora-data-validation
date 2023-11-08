@@ -2,6 +2,8 @@
 title: "gene_info_nominatedtarget_test"
 ---
 
+## DEPRECATED - subobject validation has been rolled into gene_info_test, saving this for now in case I missed anything
+
 ```{r eval=FALSE, echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 prepare()
@@ -13,7 +15,7 @@ prepare()
 name <- "gene_info"
 sub_name <- "nominatedtarget"
 source_synId <- "syn12540368.36" # harmonized_targets_20220707.csv 
-old_synId <-  "syn12548902.39" # m49 Live
+old_synId <-  "syn12548902.44" # m54 dev/3.3.0
 new_synId <- "syn17015359" 
 
 # not file-specific
@@ -42,7 +44,7 @@ assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
 # Compare old & new subobjects
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare_subobjects(get(old_name), get(new_name), "ensembl_gene_id", "nominatedtarget")
+compare_subobjects(get(old_name), get(new_name), "ensembl_gene_id", "target_nominations")
 ```
 
 # Validate subobjects against rules
@@ -50,14 +52,14 @@ compare_subobjects(get(old_name), get(new_name), "ensembl_gene_id", "nominatedta
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info_nominatedtarget.R")
-test_subobject(get(new_name), "nominatedtarget", get(rules))
+test_subobject(get(new_name), "target_nominations", get(rules))
 ```
 
 ***
 # Outstanding validation failures
 ***
 * !is.na(data_synapseid)/field_length(data_synapseid, min = 3, max = 25) 
-49 fails -> NA values are properly handled by the app
+127 fails -> NA values are properly handled by the app
 
 * !is.na(data_used_to_support_target_selection)/field_length(data_used_to_support_target_selection, min = 15, max = 2000)
 2 fails -> NA values TODO AG-365
@@ -79,6 +81,8 @@ is_unique_fails <- DATAFRAME[!out,]
 # is_unique_fails <- DATAFRAME[is.na(out),] # use this for nNA failures
 is_unique_fails
 ```
+
+
 
 ## AG-533 Missing/optional NT fields 
 ### data_synapseid
@@ -196,4 +200,18 @@ out <- values(cf)
 is_unique_fails <- nominated_targets[!out,]
 # is_unique_fails <- nominated_targets[is.na(out),] # use this for nNA failures
 is_unique_fails
+```
+
+gene_info field name refactor (AG-1161) - ENSG dropped, colrenames
+```{r}
+new <- get_subobject(gene_info_new, subname = "target_nominations")
+old <- get_subobject(gene_info_old_modified, subname = "nominatedtarget")
+
+drops <- "ensembl_gene_id"
+old <- old[, !(names(old) %in% drops)]
+
+new
+old
+
+setdiff(new, old)
 ```

@@ -12,7 +12,7 @@ prepare()
 # add file-specific values here
 name <- "genes_biodomains"
 source_synId <- "syn44151254.1"
-old_synId <- "syn51062522" # no released manifest version yet
+old_synId <- "syn51062522"
 new_synId <- "syn51062085"
 
 # not file-specific
@@ -92,6 +92,13 @@ is_unique_fails
 ***
 # Other investigations
 ***
+# 3.3.0 ALDmv61 validation
+```{r}
+genes_biodomains_new[1,]$gene_biodomains
+genes_biodomains_old[1,]$gene_biodomains
+
+```
+
 How many unmapped genes do we have in Agora?
 ```{r}
 gb_ensgs <- genes_biodomains_new$ensembl_gene_id
@@ -160,17 +167,6 @@ biodomains <- unique(subset(biodom_go_source, select=c("Biodomain")))
 biodomains[order(biodomains$Biodomain),]
 ```
 
-To calculate the % Biodomain GO term metric we need the total number of GO terms mapped to each biodomain
-this is wrong and broken
-```{r}
-agg_tbl <- biodom_go_source %>% group_by(Biodomain) %>% 
-  transmute(n_terms = length(unique(GO_ID))) %>% 
-  distinct() %>% arrange(Biodomain)
-counts <- agg_tbl %>% as.data.frame()
-print(counts)
-print(biodomains_source)
-write.csv(counts, "~/Documents/biodomain_go_counts.csv")
-```
 
 Mappings:
 ```{r}
@@ -216,3 +212,42 @@ Unique biodomains
 biodomains <- sort(unique(biodomains_source$Biodomain))
 cat(biodomains, sep = "\n")
 ```
+
+---
+What is the longest GO term we have?
+```{r}
+terms <- na.omit(unique(biodomains_source$GOterm_Name))
+which.max(nchar(terms))
+terms[6180]
+```
+
+Find a gene that is linked to it 
+-> NA
+```{r}
+test_term <- "immune system process"
+long_term <- "oxidoreductase activity, acting on paired donors, with incorporation or reduction of molecular oxygen, reduced iron-sulfur protein as one donor, and incorporation of one atom of oxygen"
+long_term_2 <- "nickel incorporation into iron-sulfur cluster via tris-L-cysteinyl L-cysteine persulfido L-glutamato L-histidino L-serinyl nickel triiron disulfide trioxide"
+long_term_3 <- "iron incorporation into iron-sulfur cluster via tris-L-cysteinyl L-cysteine persulfido L-glutamato L-histidino L-serinyl nickel triiron disulfide trioxide"
+long_term_4 <- "nickel incorporation into iron-sulfur cluster via tris-L-cysteinyl L-cysteine persulfido bis-L-glutamato L-histidino nickel triiron disulfide trioxide"
+long_term_5 <- "endonucleolytic cleavage in ITS1 to separate SSU-rRNA from 5.8S rRNA and LSU-rRNA from tricistronic rRNA transcript (SSU-rRNA, 5.8S rRNA, LSU-rRNA)"
+
+
+# row <- biodomains_source[biodomains_source$GOterm_Name %in% c(test_term),]
+#row <- biodomains_source[biodomains_source$GOterm_Name %in% c(long_term),]
+row <- biodomains_source[biodomains_source$GOterm_Name %in% c(long_term_5),]
+
+row$ensembl_id
+```
+
+What is the next longest GO term we have?
+```{r}
+terms <- na.omit(unique(biodomains_source$GOterm_Name))
+terms <- terms[-6180]
+terms <- terms[-6170]
+terms <- terms[-6168]
+terms <- terms[-6168]
+which.max(nchar(terms))
+terms[which.max(nchar(terms))]
+```
+
+

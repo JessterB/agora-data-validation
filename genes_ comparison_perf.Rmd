@@ -1,0 +1,116 @@
+---
+title: "genes_comparison.json"
+---
+
+```{r eval=FALSE, echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+prepare()
+```
+
+# Validation run metadata
+```{r echo=FALSE}
+# add file-specific values here
+name <- "genes_comparison"
+source_synId <- "REPLACEME"
+old_synId <-  "syn51288927" 
+new_synId <-  "syn51277701"
+
+# not file-specific
+source_name <- paste(name, "source", sep="_")
+old_name <- paste(name, "old", sep="_")
+new_name <- paste(name, "new", sep="_")
+rules <- paste0("rules_", name)
+
+# print validation summary
+cat( name, ".json", "\n", date(),
+    "\nold: ", old_synId, " \nnew: ", new_synId,
+    sep="")
+```
+
+# Download files
+## download new and old json files
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+download_files(old_synId, new_synId, name)
+```
+
+## download source file
+```{r}
+# file types: csv, tsv, json, f (feather), rds, rda (rdata)
+source <- download_file(source_synId, type = "REPLACEME") 
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+```
+
+# fix keys in 'old' (from Agora payload) to align with 'new' generated file
+```{r}
+names(genes_comparison_old)[names(genes_comparison_old) == "items.ensembl_gene_id"] <- "ensembl_gene_id"
+names(genes_comparison_old)[names(genes_comparison_old) == "items.hgnc_symbol"] <- "hgnc_symbol"
+names(genes_comparison_old)[names(genes_comparison_old) == "items.tissues"] <- "tissues"
+names(genes_comparison_old)[names(genes_comparison_old) == "items.nominations"] <- "nominations"
+names(genes_comparison_old)[names(genes_comparison_old) == "items.associations"] <- "associations"
+names(genes_comparison_old)[names(genes_comparison_old) == "items.target_risk_score"] <- "target_risk_score"
+names(genes_comparison_old)[names(genes_comparison_old) == "items.genetics_score"] <- "genetics_score"
+names(genes_comparison_old)[names(genes_comparison_old) == "items.multi_omics_score"] <- "multi_omics_score"
+```
+
+# sort by ensg to facilitate comparison
+```{r}
+genes_comparison_new <- genes_comparison_new[order(genes_comparison_new$ensembl_gene_id),]
+genes_comparison_old <- genes_comparison_old[order(genes_comparison_old$ensembl_gene_id),]
+```
+
+```{r}
+print(genes_comparison_new)
+print(genes_comparison_old)
+```
+
+```{r}
+new_nominations <- genes_comparison_new$nominations %>% 
+  map(~ tidyr::pivot_wider(.[,c("count","year", "teams", "studies", "inputs", "programs", "validations")])) %>% 
+  bind_rows() 
+
+old_nominations <- genes_comparison_old$nominations %>% 
+  map(~ tidyr::pivot_wider(.[,c("count","year", "teams", "studies", "inputs", "programs", "validations")])) %>% 
+  bind_rows() 
+
+print(new_nominations)
+print(old_nominations)
+
+```
+
+
+# Compared old & new files
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+compare(get(old_name), get(new_name), name)
+```
+
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+#compare_subobjects(get(old_name), get(new_name), "ensembl_gene_id", "tissues")
+compare_subobjects(get(old_name), get(new_name), "ensembl_gene_id", "nominations")
+compare_subobjects(get(old_name), get(new_name), "ensembl_gene_id", "associations")
+```
+
+
+# Validated new file against rules
+```{r echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_REPLACEME.R")
+test(get(new_name), get(rules))
+```
+
+
+***
+# Validation failure investigations
+***
+
+
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(VALIDATION_RULE)
+cf <- confront(DATAFRAME, v)
+out <- values(cf)
+is_unique_fails <- DATAFRAME[!out,]
+is_unique_fails
+```

@@ -8,7 +8,55 @@ source("~/repos/rstudio/agora-data-validation/src/utils.R")
 prepare()
 ```
 
+## MSBB metadata (adportal thread)
+never mind, they shouldn't be joining MSSM to MSBB metadata...
 
+```{r}
+individuals <- download_file("syn51942196", type="csv")
+metadata <- download_file("syn6101474", type="csv")
+```
+
+```{r}
+joined <- full_join(individuals, metadata, by="individualID", keep=FALSE)
+joined <- joined[,order(colnames(joined))]
+
+interesting_columns <- c("individualID", "Braak.x", "Braak.y", "CERAD.x", "CERAD.y", "diagnosis.x", "CDR")
+filtered_joined <- joined[,interesting_columns]
+filtered_joined
+
+# diagnosis
+unique(individuals$diagnosis)
+
+# mismatched Braak scores
+braak_i <- individuals[!is.na(individuals$Braak),]
+braak_i
+
+braak_m <- metadata[!is.na(individuals$Braak),]
+braak_m
+
+# diagnosis vs CDR scores
+
+```
+
+
+
+## gene-biodomain mapping 
+What does this look like?
+"GO_ID": string
+"GOterm_Name": string  
+"Biodomain": string    
+"ensembl_id": string[]   
+"n_ensGene": int    
+"entrez_id": string[]   
+"n_entrezGene": int 
+"symbol": string[]      
+"n_symbol": int
+
+```{r}
+gene_biodom_mappings <- download_file("syn26529354", type="rds")
+colnames(gene_biodom_mappings)
+print(gene_biodom_mappings[1])
+```
 
 
 ## missing nominated target fields

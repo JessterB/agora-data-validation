@@ -11,10 +11,9 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 name <- "target_exp_validation_harmonized"
-source_synId <- "syn24184512" #csv
-old_synId <-  "syn25741027.14" # m49 Live
-new_synId <- "syn25740978" # v51 Testing
-
+source_synId <- "syn24184512.6" #csv
+old_synId <-  "syn25741027"  
+new_synId <- "syn25740978"
 
 # not file-specific
 source_name <- paste(name, "source", sep="_")
@@ -59,7 +58,7 @@ test(get(new_name), get(rules))
 ***
 
 * field_length(ensembl_gene_id, n = 15): 1 fail - See AG-351 (TL;DR - ignore this failure)
-
+* is.na(ensembl_gene_id) and  field_length(ensembl_gene_id, n=15): 1 fail/1 NA respectively (see AG-905)
 * field_format(reference_doi, "^$|^https?://doi.org/.*$", type = "regex"): 103 fails [changed from "" to null via AG-474]
 
 ***
@@ -141,4 +140,24 @@ print(mdk)
 
 mdk_new <- target_exp_validation_harmonized_new[target_exp_validation_harmonized_new$ensembl_gene_id == 'ENSG00000110492',]
 print(mdk_new)
+```
+
+
+```{r}
+dois <- target_exp_validation_harmonized_new[!is.na(target_exp_validation_harmonized_new$reference_doi),]
+subset(dois, select = c(published, reference, reference_doi))
+```
+
+```{r}
+vals <- target_exp_validation_harmonized_old[target_exp_validation_harmonized_old$team == "Emory",]
+vals
+empty_vals <- mssm_noms[is.na(vals$hypothesis_tested),]
+print(empty_vals$ensembl_gene_id)
+
+```
+
+```{r}
+empty_vals <- target_exp_validation_harmonized_old[is.na(target_exp_validation_harmonized_old$hypothesis_tested),]
+print(empty_vals$ensembl_gene_id)
+
 ```

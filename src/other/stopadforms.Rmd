@@ -1,0 +1,29 @@
+---
+title: "stopadforms"
+---
+
+```{r}
+remotes::install_github("Sage-Bionetworks/synapseforms", character.only = FALSE)
+library("synapseforms")
+```
+
+```{r}
+install.packages("reticulate")
+library("reticulate")
+```
+
+```{r}
+syn <- log_into_synapse()
+group <- 9
+output_dir <- "./files/stopadforms"
+
+download_all_and_output_to_csv(
+  syn,
+  group,
+  output_dir,
+  state_filter = "SUBMITTED_WAITING_FOR_REVIEW"
+)
+```
+
+
+

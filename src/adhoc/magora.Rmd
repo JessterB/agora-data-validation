@@ -97,6 +97,62 @@ individual <- fivex_sab[fivex_sab$individualID == 4255,]
 print(individual)
 ```
 
+Biospecimen metadaa
+```{r}
+pathology_biospecimen <- download_file('syn18876530.9', type = "csv")
+```
+```{r}
+pathology_biospecimen
+```
+Why don't we use the tissue column from biospecimen?
+```{r}
+tissue_hippo <- pathology_biospecimen[pathology_biospecimen$tissue == "hippocampus",]
+specimen_h <- pathology_biospecimen[str_detect(pathology_biospecimen$specimenID, "h"),]
+specimen_H <- pathology_biospecimen[str_detect(pathology_biospecimen$specimenID, "H"),]
+specimen_hippo <- rbind(specimen_h, specimen_H)
+
+nrow(tissue_hippo)
+nrow(specimen_hippo)
+anti_join(specimen_hippo, tissue_hippo)
+anti_join(tissue_hippo, specimen_hippo)
+
+tissue_cortex <- pathology_biospecimen[pathology_biospecimen$tissue == "cerebral cortex",]
+specimen_c <- pathology_biospecimen[str_detect(pathology_biospecimen$specimenID, "c"),]
+specimen_C <- pathology_biospecimen[str_detect(pathology_biospecimen$specimenID, "C"),]
+specimen_cortex <- rbind(specimen_c, specimen_C)
+
+nrow(tissue_cortex)
+nrow(specimen_cortex)
+anti_join(specimen_cortex, tissue_cortex)
+anti_join(tissue_cortex, specimen_cortex)
+
+tissue_plasma <- pathology_biospecimen[pathology_biospecimen$tissue == "plasma",]
+specimen_p <- pathology_biospecimen[str_detect(pathology_biospecimen$specimenID, "p"),]
+specimen_P <- pathology_biospecimen[str_detect(pathology_biospecimen$specimenID, "P"),]
+specimen_plasma <- rbind(specimen_p, specimen_P)
+
+nrow(tissue_plasma)
+nrow(specimen_plasma)
+anti_join(specimen_plasma, tissue_plasma)
+anti_join(tissue_plasma, specimen_plasma)
+```
+
+Individual metadata
+```{r}
+pathology_individual <- download_file('syn18880070.12', type = "csv")
+pathology_individual
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+path_5x
+```
+
 --------------------
 Gene Expression data 
 --------------------
@@ -189,8 +245,44 @@ print(unique(cols[,8]))
 ----------
 Nanostring
 ----------
+Individual & biospecimen metadata
+```{r}
+nano_individual <- download_file('syn22107818.7', type = "csv") 
+nano_biospecimen <- download_file('syn22107820.6', type = "csv") 
 
-What's in syn21483261 (aggregate modules)?
+nano_individual
+nano_biospecimen
+```
+
+
+
+Source file with mouse results data
+```{r}
+nano_mouse_source <- download_file('syn22105392.2', type = "csv") 
+nano_mouse_source
+```
+
+Human results source file
+```{r}
+nano_human_source <- download_file('syn14237651.1', type = "tsv") 
+nano_human_source
+```
+
+How do we join human and mouse data??
+toupper(mouse$X) <-> human$hgnc_symbol
+```{r}
+nano_mouse_source_toupper <- nano_mouse_source %>% mutate(X = toupper(X))
+
+nano_mouse_genes <- nano_mouse_source_toupper$X
+nano_human_genes <- nano_human_source$hgnc_symbol
+
+
+intersect(nano_mouse_genes, nano_human_genes)
+
+```
+
+
+What's in syn21483261 (aggregateModules.rda)?
 
 
 ```{r}
@@ -203,6 +295,7 @@ code_data <- c("cbe_mods", "dlpfc_mods", "fp_mods", "ifg_mods", "phg_mods", "stg
 print(code_data)
 
 setdiff(syn_data, code_data)
+
 ```
 
 Modules
@@ -211,22 +304,151 @@ Modules
 ampad_modules_raw <- map_dfr(code_data, ~ get(.x)[["df"]]) %>%
   as_tibble()
 
-unique(ampad_modules_raw$ModuleName)
+# useful ways to peek into this thing
+names(ampad_modules_raw)
+names(dlpfc_mods$mods)
 ```
+
+```{r}
+unique(ampad_modules_raw$Module)
+print(ampad_modules_raw[ampad_modules_raw$Module == "CBEturquoise",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "CBEblue",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "CBEbrown",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "CBEyellow",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "DLPFCturquoise",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "DLPFCblue",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "DLPFCbrown",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "DLPFCyellow",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "FPturquoise",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "FPblue",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "FPbrown",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "FPyellow",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "IFGturquoise",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "IFGblue",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "IFGbrown",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "IFGyellow",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "PHGturquoise",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "PHGblue",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "PHGbrown",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "PHGyellow",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "PHGgreen",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "STGturquoise",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "STGblue",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "STGbrown",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "STGyellow",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "TCXturquoise",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "TCXblue",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "TCXbrown",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "TCXyellow",])
+print(ampad_modules_raw[ampad_modules_raw$Module == "TCXgreen",])
+```
+
+```{r}
+ampad_modules_raw <- map_dfr("dlpfc_mods", ~ get(.x)[["df"]]) %>%
+  as_tibble()
+
+unique(ampad_modules_raw$Module)
+unique(ampad_modules_raw$method)
+unique(ampad_modules_raw$ModuleName)
+unique(ampad_modules_raw$ModuleNameFull)
+print(ampad_modules_raw)
+```
+
 
 ```{r}
 moduleGraph <- dlpfc_mods$moduleGraph
 print(moduleGraph)
 ```
 
-What is syn22105392 (logHKNormalized_Allsamples.csv)?
-Colnames are not helpful!
-x, gt prefixes mean what? what are the numbers?!
+
+New source file validation
+MG-14 - aggretageModules
+
+old rda: syn21483261
+new csv: syn51515825
 
 ```{r}
-allsamples <- download_file('syn22105392', type = "csv") 
+aggregate_new <- download_file('syn51515825', type = "csv") 
+```
+
+
+```{r}
+aggregate_new
+length(unique(aggregate_new$GeneID))
+length(unique(aggregate_new$Module))
+length(unique(aggregate_new$brainRegion))
+length(unique(aggregate_new$external_gene_name))
+
+sum(is.na(aggregate_new$GeneID))
+sum(is.na(aggregate_new$external_gene_name))
+```
+
+
+```{r}
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "CBEturquoise",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "CBEblue",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "CBEbrown",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "CBEyellow",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "DLPFCturquoise",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "DLPFCblue",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "DLPFCbrown",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "DLPFCyellow",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "FPturquoise",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "FPblue",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "FPbrown",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "FPyellow",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "IFGturquoise",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "IFGblue",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "IFGbrown",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "IFGyellow",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "PHGturquoise",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "PHGblue",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "PHGbrown",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "PHGyellow",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "PHGgreen",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "STGturquoise",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "STGblue",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "STGbrown",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "STGyellow",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "TCXturquoise",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "TCXblue",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "TCXbrown",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "TCXyellow",]) +
+nrow(ampad_modules_raw[ampad_modules_raw$Module == "TCXgreen",])
 ```
 
 ```{r}
-head(allsamples)
+CBEturquoise_module <- (ampad_modules_raw[ampad_modules_raw$Module == "CBEturquoise",])
+CBEblue_module <- (ampad_modules_raw[ampad_modules_raw$Module == "CBEblue",])
+CBEbrown_module <- (ampad_modules_raw[ampad_modules_raw$Module == "CBEbrown",])
+CBEyellow_module <- (ampad_modules_raw[ampad_modules_raw$Module == "CBEyellow",])
+DLPFCturquoise_module <- (ampad_modules_raw[ampad_modules_raw$Module == "DLPFCturquoise",])
+DLPFCblue_module <- (ampad_modules_raw[ampad_modules_raw$Module == "DLPFCblue",])
+DLPFCbrown_module <- (ampad_modules_raw[ampad_modules_raw$Module == "DLPFCbrown",])
+DLPFCyellow_module <- (ampad_modules_raw[ampad_modules_raw$Module == "DLPFCyellow",])
+FPturquoise_module <- (ampad_modules_raw[ampad_modules_raw$Module == "FPturquoise",])
+FPblue_module <- (ampad_modules_raw[ampad_modules_raw$Module == "FPblue",])
+FPbrown_module <- (ampad_modules_raw[ampad_modules_raw$Module == "FPbrown",])
+FPyellow_module <- (ampad_modules_raw[ampad_modules_raw$Module == "FPyellow",])
+IFGturquoise_module <- (ampad_modules_raw[ampad_modules_raw$Module == "IFGturquoise",])
+IFGblue_module <- (ampad_modules_raw[ampad_modules_raw$Module == "IFGblue",])
+IFGbrown_module <- (ampad_modules_raw[ampad_modules_raw$Module == "IFGbrown",])
+IFGyellow_module <- (ampad_modules_raw[ampad_modules_raw$Module == "IFGyellow",])
+PHGturquoise_module <- (ampad_modules_raw[ampad_modules_raw$Module == "PHGturquoise",])
+PHGblue_module <- (ampad_modules_raw[ampad_modules_raw$Module == "PHGblue",])
+PHGbrown_module <- (ampad_modules_raw[ampad_modules_raw$Module == "PHGbrown",])
+PHGyellow_module <- (ampad_modules_raw[ampad_modules_raw$Module == "PHGyellow",])
+PHGgreen_module <- (ampad_modules_raw[ampad_modules_raw$Module == "PHGgreen",])
+STGturquoise_module <- (ampad_modules_raw[ampad_modules_raw$Module == "STGturquoise",])
+STGblue_module <- (ampad_modules_raw[ampad_modules_raw$Module == "STGblue",])
+STGbrown_module <- (ampad_modules_raw[ampad_modules_raw$Module == "STGbrown",])
+STGyellow_module <- (ampad_modules_raw[ampad_modules_raw$Module == "STGyellow",])
+TCXturquoise_module <- (ampad_modules_raw[ampad_modules_raw$Module == "TCXturquoise",])
+TCXblue_module <- (ampad_modules_raw[ampad_modules_raw$Module == "TCXblue",])
+TCXbrown_module <- (ampad_modules_raw[ampad_modules_raw$Module == "TCXbrown",])
+TCXyellow_module <- (ampad_modules_raw[ampad_modules_raw$Module == "TCXyellow",])
+TCXgreen_module <- (ampad_modules_raw[ampad_modules_raw$Module == "TCXgreen",])
 ```
+
+
+

@@ -12,8 +12,8 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 name <- "network"
-source_synId <- "syn11685347"
-old_synId <-  "syn12523173.27" # m49 Live
+source_synId <- "syn11685347.1"
+old_synId <-  "syn12523173"
 new_synId <- "syn17015361" 
 
 # not file-specific

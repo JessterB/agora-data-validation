@@ -1,5 +1,5 @@
 ---
-title: "gene_info_druggability_test"
+title: "biodomains_info.json"
 ---
 
 ```{r eval=FALSE, echo=FALSE}
@@ -9,63 +9,64 @@ prepare()
 
 # Validation run metadata
 ```{r echo=FALSE}
-# file-specific
-name <- "gene_info"
-sub_name <- "druggability"
-source_synId <- "syn13363443.11" # druggability_genomewide.csv
-old_synId <-  "syn12548902.39" # m49 Live
-new_synId <- "syn17015359" 
+# add file-specific values here
+name <- "biodomain_info"
+source_synId <- "syn44151254.1"
+old_synId <-  "syn51713298"
+new_synId <-  "syn51709751"
 
 # not file-specific
+source_name <- paste(name, "source", sep="_")
 old_name <- paste(name, "old", sep="_")
 new_name <- paste(name, "new", sep="_")
-rules <- paste0("rules_gene_info_", sub_name)
+rules <- paste0("rules_", name)
 
 # print validation summary
-cat( name, ".json", "\nReported on:  ", date(),
+cat( name, ".json", "\n", date(),
     "\nold: ", old_synId, " \nnew: ", new_synId,
     sep="")
 ```
 
-# Downloaded files to compare
+# Download files
+## download new and old json files
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 download_files(old_synId, new_synId, name)
 ```
 
-# Download source files
+## download source file
 ```{r}
+# file types: csv, tsv, json, f (feather), rds, rda (rdata)
 source <- download_file(source_synId, type = "csv") 
 assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
 ```
 
-## Compare old & new subobjects
 
+# Compared old & new files
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-compare_subobjects(get(old_name), get(new_name), "ensembl_gene_id", "druggability")
+compare(get(old_name), get(new_name), name)
 ```
 
-## Validate subobjects against rules
 
+# Validated new file against rules
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
-source("~/repos/rstudio/agora-data-validation/src/rules/rules_gene_info_druggability.R")
-test_subobject(get(new_name), "druggability", get(rules))
+source("~/repos/rstudio/agora-data-validation/src/rules/rules_biodomain_info.R")
+test(get(new_name), get(rules))
 ```
 
-***
-# Outstanding validation failures
-***
-None
 
 ***
 # Validation failure investigations
+***
+
+
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule
-v <- validator(VALIDATION_RULE)
-cf <- confront(DATAFRAME, v)
+v <- validator(REPLACEME)
+cf <- confront(biodomain_info_new, v)
 out <- values(cf)
-is_unique_fails <- DATAFRAME[!out,]
+is_unique_fails <- biodomain_info_new[!out,]
 is_unique_fails
 ```

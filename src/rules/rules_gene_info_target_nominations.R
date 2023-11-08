@@ -1,4 +1,4 @@
-rules_gene_info_nominatedtarget <-  validator(
+rules_gene_info_target_nominations <-  validator(
   
   # data_synapseid - is this used? -> link to portal study page, not always populated
   is.vector(data_synapseid),

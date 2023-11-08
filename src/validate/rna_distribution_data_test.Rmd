@@ -11,7 +11,8 @@ prepare()
 ```{r echo=FALSE}
 # add file-specific values here
 name <- "rna_distribution_data"
-old_synId <-  "syn27818985.7" # m49 Live
+source_synId <- "syn27211942.1" # .tsv
+old_synId <-  "syn27818985"
 new_synId <-  "syn28094691" 
 
 # not file-specific
@@ -32,7 +33,7 @@ download_files(old_synId, new_synId, name)
 ```
 
 ```{r}
-source <- download_file(source_synId, type = "REPLACEME") # file type: csv, tsv, json, f (feather)
+source <- download_file(source_synId, type = "tsv") # file type: csv, tsv, json, f (feather)
 assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
 ```
 

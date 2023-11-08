@@ -12,7 +12,7 @@ prepare()
 # add file-specific values here
 name <- "proteomics_distribution_data"
 # source_synId <- use proteomics and proteomics_tmt files (source or validated _new)
-old_synId <-  "syn31808319.6" # m49 Live
+old_synId <-  "syn31808319" 
 new_synId <-  "syn31510062" 
 
 # not file-specific

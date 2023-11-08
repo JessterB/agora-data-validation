@@ -12,9 +12,6 @@ rules_gene_info_druggability <- validator(
   is.character(classification),
   field_length(classification, min=22, max=1000),
   
-  # geneid
-  is_unique(geneid),
-  
   # pharos_class
   is.character(pharos_class),
   

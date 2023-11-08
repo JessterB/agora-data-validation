@@ -15,12 +15,7 @@ rules_overall_scores <- validator(
   is.numeric(genetics_score),
   !is.na(genetics_score),
   in_range(genetics_score, min=0, max=3),
-  
-  # literaturescore
-  is.numeric(literature_score),
-  !is.na(literature_score),
-  in_range(literature_score, min=0, max=2),
-  
+
   # omicsscore
   is.numeric(multi_omics_score),
   !is.na(multi_omics_score),

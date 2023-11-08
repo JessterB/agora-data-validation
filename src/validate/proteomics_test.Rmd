@@ -11,8 +11,8 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 name <- "proteomics"
-source_synId <- "syn18689335" # csv
-old_synId <-  "syn18693175.15" # m49 Live
+source_synId <- "syn18689335.3" # csv
+old_synId <-  "syn18693175" 
 new_synId <- "syn18691125"
 
 # not file-specific

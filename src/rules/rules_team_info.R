@@ -14,6 +14,10 @@ rules_team_info <- validator(
   is.character(team),
   field_length(team, min=3, max=50),  
   is_unique(team),
+  team %in% c("Columbia-Rush", "Duke", "Emory", "Harvard-MIT", "MSSM", 
+              "Sage Bionetworks", "Mayo-UFL-ISB", "Chang Lab", 
+              "JAX-VUMC-UW Resilience", "ASU", "Longo Lab", "Duke BARU", 
+              "Emory-Sage-SGC", "IUSM-Purdue"),
   
   #team_full
   is.character(team_full),

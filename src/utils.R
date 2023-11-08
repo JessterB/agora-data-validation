@@ -7,15 +7,21 @@ prepare <- function() {
     if (!require("synapser")) { install.packages("synapser", repos = c("http://ran.synapse.org", "http://cran.fhcrc.org")) }
     if (!require("jsonlite")) { install.packages("jsonlite") }
     if (!require("tidyverse")) { install.packages("tidyverse") }
+    if (!require("deplyr")) { install.packages("dplyr") }
     if (!require("sqldf")) { install.packages("sqldf") }
     if (!require("validate")) { install.packages("validate") }
     if (!require("arrow")) { install.packages("arrow") } 
+    if (!require("arsenal")) { install.packages("arsenal") }
+    if (!require("testit")) { install.packages("testit") }
     library(synapser)
     library(jsonlite)
     library(tidyverse)
+    library(dplyr)
     library(sqldf)
     library(validate)
     library(arrow)
+    library(arsenal)
+    library(testit)
     synLogin()
   }
 
@@ -99,14 +105,23 @@ download_file <- function(synId, df_name, type = 'json', quiet = TRUE) {
 # - name  Friendly name for the pair of files being compared, e.g. gene_info
 # - summarize  Whether to print out a summary() for each file
 
-compare <- function(old, new, name) {
-  identical <- identical(old, new)
-  equal <- all.equal(old, new)
+# TODO compare list columns
+
+compare <- function(old, new, name, sort_by_ensg=FALSE) {
+  if (sort_by_ensg) {
+    # sometimes it's helpful to sort rows by ensg to ensure consistent order for comparison
+    old <- old %>% arrange(sort_by_ensg)
+    new <- new %>% arrange(sort_by_ensg)
+  }
+
+  identical <- identical(old, new) # base R check
   cat("is identical:", identical, "\n")
+  
+  equal <- all.equal(old, new) # deplyr check
   cat("is equal (1.5e-8 tolerance):", equal, sep="\n")
   
-  cat("\nNumber of Records \n- old: ", nrow(old), "\n- new: ", nrow(new), "\n-change: ", nrow(new) - nrow(old), "\n")
-  cat("\n\nNumber of Columns \n- old :", ncol(old), "\n- new: ", ncol(new), "\n-change: ", ncol(new) - ncol(old), "\n\n")
+  cat("\nNumber of Records \n- old: ", nrow(old), "\n- new: ", nrow(new), "\n- change: ", nrow(new) - nrow(old), "\n")
+  cat("\n\nNumber of Columns \n- old :", ncol(old), "\n- new: ", ncol(new), "\n- change: ", ncol(new) - ncol(old), "\n\n")
 
   old_cols <- colnames(old)
   new_cols <- colnames(new)
@@ -159,8 +174,8 @@ compare <- function(old, new, name) {
 # - key_field The key of a unique identifier that can be used to field the same subobject in both files
 # - subname_old  The key of the subobject in the old file
 # - subname_new The key of the subobject in the new file; defaults to subname_old
-
-compare_subobjects <- function(old, new, key_field, subname_old, subname_new = subname_old) {
+# TODO: test more than one subobject 
+compare_subobjects <- function(old, new, key_field, subname_old, subname_new = subname_old, n=10) {
   
   old_subobjs <- old[[subname_old]]
   new_subobjs <- new[[subname_new]]
@@ -183,7 +198,7 @@ compare_subobjects <- function(old, new, key_field, subname_old, subname_new = s
       colnames_old <- colnames(old_subobj)
       colnames_new <- colnames(new_subobj)
       
-      cat("Subobject comparison: ", "\n-new subobject:", subname_new, "\n-old subobject:", subname_old, sep=" ")
+      print(paste("Comparing populated new", subname_new, "object to populated old", subname_old, "object with matching", key_field, "values:", key))
       cat("\n\nis identical: ", identical(old_subobj, new_subobj), sep="\n- ")
       cat("\nis equal: ",   all.equal(old_subobj, new_subobj), sep="\n- ")
       cat("\nColumns dropped: ", setdiff(colnames_old,colnames_new), sep="\n- ")
@@ -236,4 +251,16 @@ test_subobject <- function(df, subname, rules) {
 get_subobject <- function(df, subname) {
   sublist <- df[[subname]]
   bind_rows(sublist)
+}
+
+# Replace NULL inner lists with NA
+# - x - the list to operate on
+replace_null <-  function(x) {
+  lapply(x, function(x) {
+    if (is.list(x)){
+      replace_null(x)
+    } else{
+      if(is.null(x)) NA else(x)
+    } 
+  })
 }

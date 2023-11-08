@@ -11,8 +11,8 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 name <- "team_info"
-source_synId <- "syn12615624" #csv
-old_synId <-  "syn12616884.22" # m9 Live
+source_synId <- "syn12615624.15" #csv
+old_synId <-  "syn12616884"
 new_synId <- "syn17015358"
 
 # not file-specific
@@ -73,10 +73,24 @@ is_unique_fails
 ***
 # Other validation
 ***
+
+IU update
+```{r}
+team_info_old
+team_info_new
+```
+
+teams
+```{r}
+unique(team_info_new$team)
+
+```
+
 Reprocessing to pick up new team (AG-667)
 ```{r}
 team_info_new
 team_info_old
-new_team <- team_info_new[team_info_new$team == "Emory-Sage-SGC",]
+new_team <- team_info_new[team_info_new$team == "Sage Bionetworks",]
 new_team$description
+new_team$members
 ```
