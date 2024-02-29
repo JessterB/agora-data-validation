@@ -11,7 +11,7 @@ prepare()
 ```{r echo=FALSE}
 # file-specific
 name <- "proteomics_srm"
-source_synId <- "syn52579640.3" # csv
+source_synId <- "syn52579640.4" # csv
 old_synId <-  "syn52913548" 
 new_synId <- "syn52579910"
 
@@ -66,32 +66,6 @@ test(get(new_name), get(rules))
 ***
 # Validation failure investigations
 ***
-0 pval/cor_pval
-per Jaclyn, these pvals are so small that the code rounds them to 0....see AG-1227 for notes
-
-```{r}
-proteomics_srm_source[proteomics_srm_source$ENSG == "ENSG00000115461",]
-proteomics_srm_source[proteomics_srm_source$ENSG == "ENSG00000106089",]
-proteomics_srm_source[proteomics_srm_source$ENSG == "ENSG00000128564",]
-```
-
-
-```{r}
-# yields a dataframe containing the failure cases for a specific rule
-v <- validator(pval > 0)
-cf <- confront(proteomics_srm_new, v)
-out <- values(cf)
-is_unique_fails <- proteomics_srm_new[!out,]
-is_unique_fails
-```
-```{r}
-# yields a dataframe containing the failure cases for a specific rule
-v <- validator(cor_pval > 0)
-cf <- confront(proteomics_srm_new, v)
-out <- values(cf)
-is_unique_fails <- proteomics_srm_new[!out,]
-is_unique_fails
-```
 
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule
@@ -102,12 +76,58 @@ is_unique_fails <- proteomics_srm_new[!out,]
 is_unique_fails
 ```
 
+0 pval/cor_pval
+per Jaclyn, these pvals are so small that the code rounds them to 0....see AG-1227 for notes
+
+```{r}
+proteomics_srm_source[proteomics_srm_source$ENSG == "ENSG00000115461",]
+proteomics_srm_source[proteomics_srm_source$ENSG == "ENSG00000106089",]
+proteomics_srm_source[proteomics_srm_source$ENSG == "ENSG00000128564",]
+```
+
+
+
 ***
 Other validation
 ***
+
+AG-1222 - SRM plots missing for genes with l2fc > 0.4ish
+```{r}
+proteomics_srm_new[order(proteomics_srm_new$log2_fc,decreasing=TRUE),]
+proteomics_tmt_new[order(proteomics_tmt_new$log2_fc,decreasing=TRUE),]
+proteomics_new[order(proteomics_new$log2_fc,decreasing=TRUE),]
+max(proteomics_tmt_new$log2_fc)
+max(proteomics_new$log2_fc)
+```
+
+SRM round 2 redundancy - do we have multiple results for some genes??
+
+```{r}
+redundants <- c("BIN1", "RPL35", "RPL35A")
+proteomics_srm_new[proteomics_srm_new$hgnc_symbol %in% redundants,]
+
+proteomics_srm_new[startsWith(proteomics_srm_new$uniqid, "BIN1"),]
+proteomics_srm_new[proteomics_srm_new$ensembl_gene_id == "ENSG00000136717",]
+```
+
+
+SRM unique peptides per ENSG?
+```{r}
+proteomics_srm_new$uniprotid
+```
+
+
 SRM tissues
 ```{r}
 unique(proteomics_srm_new$tissue)
 
+```
+
+SRM duplicate ENSGs
+```{r}
+proteomics_srm_source
+iptk1 <- proteomics_srm_source[proteomics_srm_source$ENSG == 'ENSG00000100605',]
+iptk1 <- rbind(iptk1, proteomics_srm_source[proteomics_srm_source$ENSG == 'ENSG00000274958',])
+iptk1
 ```
 

@@ -2,11 +2,6 @@
 title: "gene_info_test"
 ---
 
-See the following files and paired rules files for gene_info subobject validation:
-* gene_info_druggability_test.R & rules_gene_info_druggability.R
-* gene_info_median_expression_test.R & rules_gene_info_median_expression.R
-* gene_info_nominatedtarget_test.R & rules_gene_info_nominatedtarget.R
-
 ```{r eval=FALSE, echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 prepare()
@@ -24,12 +19,13 @@ eqtl_source_synId <- "syn12514912.3" # eqtl_meta_analysis.csv
 proteomics_source_synId <- "syn18689335.3" # Final_Agora_DE.csv
 proteomics_tmt_source_synId <- "syn35221005.2" # ROSMAP_DiffExp_TMTproteins.csv
 rna_de_source_synId <- "syn27211942.1" # differentialExpressionSummary.tsv
-target_list_source_synId <- "syn12540368.41" #harmonized_targets_20230926.csv
+target_list_source_synId <- "syn12540368.47" #harmonized_targets_20231219.csv
 target_exp_val_synId <- "syn24184512.6" # Agora_target_exp_validation_harmonized.csv
 ter_source_synId <- "syn51942280.1" #tep_adi_info.csv
 
 # json files
-old_synId <-  "syn12548902"
+#old_synId <-  "syn12548902"  
+old_synId <-  "syn17015359.233"
 new_synId <- "syn17015359" 
 
 # sub-object rules files
@@ -60,6 +56,9 @@ download_files(old_synId, new_synId, name)
 # gene_source
 gene <- download_file(gene_source_synId, type = "f") 
 assign(paste("gene", "source", sep="_"), gene, envir = .GlobalEnv)
+```
+
+```{r}
 # igap_source
 igap <- download_file(igap_source_synId, type = "csv") 
 assign(paste("igap", "source", sep="_"), igap, envir = .GlobalEnv)
@@ -91,7 +90,11 @@ exp_val <- download_file(target_exp_val_synId, type="csv")
 assign(paste("exp_val", "source", sep="_"), exp_val, envir = .GlobalEnv)
 ```
 
-
+```{r}
+# TER source
+exp_val <- download_file(ter_source_synId, type="csv")
+assign(paste("ter", "source", sep="_"), exp_val, envir = .GlobalEnv)
+```
 # Compared old & new files
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
@@ -132,21 +135,21 @@ test_subobject(gene_info_new, "ensembl_info", get(ensembl_info_rules))
 ***
 gene_info
 * !is.na(hgnc_symbol)/field_length(hgnc_symbol, min = 0, max = 100): 
-20662 - NA values
+22051 - NA values (-> 19309 v233)
 * !is.na(name)/field_length(name, min = 0, max = 200): 
-20663 - NA values
+22052 - NA values (-> 19310 v233)
 * !is.na(nominations)/nominations > 0/lengths(nominatedtarget) > 0: 
-69769 fails (only expect nominated targets to pass this one)
+70373 fails (only expect nominated targets to pass this one) (-> 65866 v233)
 * !is.na(summary): 
-45965 fails - NA values
+47402 fails - NA values  (-> 43107 v233)
 
 target_nominations
 * !is.na(data_synapseid)/field_length(data_synapseid, min = 3, max = 25) 
-127 fails -> NA values are properly handled by the app -> 49 TODO
+286 fails
 * !is.na(data_used_to_support_target_selection)/field_length(data_used_to_support_target_selection, min = 15, max = 2000)
 2 fails -> NA values (handled via AG-850)
 * !is.na(study)/field_length(study, min = 2, max = 200)
-7 fails -> NA values - see https://sagebionetworks.jira.com/browse/AG-846
+40 fails 
 * !is.na(validation_study_details)/field_length(validation_study_details, min = 0, max = 1000)
 130 fails -> NA values - see https://sagebionetworks.jira.com/browse/AG-846
 
@@ -157,20 +160,28 @@ druggability
 * none
 
 ensembl_info
-* none
+* none (-> 7 v233; )
 
 ***
 # Validation failure investigations
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule
-v <- validator(grepl("INPP5D", resource_url, fixed = TRUE))
+v <- validator(RULE)
 cf <- confront(gene_info_new, v)
 out <- values(cf)
 is_unique_fails <- gene_info_new[!out,]
 is_unique_fails
 ```
 
-
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+noms <- get_subobject(gene_info_new, "target_nominations")
+v <- validator(field_length(study, min = 2, max = 200))
+cf <- confront(noms, v)
+out <- values(cf)
+is_unique_fails <- noms[!out,]
+is_unique_fails
+```
 
 ## is_unique(ensembl_gene_id): 2 fails (7/19/22) -> 4 fails (9/29/22)
 dups are identical outside of hgnc/name fields
@@ -207,29 +218,40 @@ is_unique_fails
 gene_info_old[gene_info_old$ensembl_gene_id == "ENSG00000002933",]
 ```
 
+## field_length(ensembl_release, min = 1, max = 3) -> 7 nna
+
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+subobj <- get_subobject(gene_info_new, "ensembl_info")
+v <- validator(field_length(ensembl_release, min = 1, max = 3))
+cf <- confront(subobj, v)
+out <- values(cf)
+subobj$validation_result <- out
+print(subobj)
+```
 
 
 ***
-Misc investigations/validation
+Nomination stats
 ***
 
 ## GENE_INFO
 
+
 ## Nomination stats
-TODO update "new" nominatedtarget -> target_nominations next time
 
 ```{r}
 # old = ALD current RC json, new = ALD last released json
 sorted_old <- subset(gene_info_old %>% arrange(TRUE), select = c(ensembl_gene_id, target_nominations))
-sorted_new <- subset(gene_info_new %>% arrange(TRUE), select = c(ensembl_gene_id, nominatedtarget))
+sorted_new <- subset(gene_info_new %>% arrange(TRUE), select = c(ensembl_gene_id, target_nominations))
  
 old <- sorted_old[!is.na(replace_null(sorted_old)$target_nominations),]
-new <- sorted_new[!is.na(replace_null(sorted_new)$nominatedtarget),]
+new <- sorted_new[!is.na(replace_null(sorted_new)$target_nominations),]
 
 # SOURCES
 # use pinned source files used to generate old and new json
 target_list_source_old <- download_file("syn12540368.41", "target_list_source_old", type="csv")
-target_list_source_new <- download_file("syn12540368.36", "target_list_source_new", type="csv")
+target_list_source_new <- download_file("syn12540368.47", "target_list_source_new", type="csv")
 
 #OLD
 # total # expected nominations (old source)
@@ -265,7 +287,7 @@ cat("\ntotal # expected nominated targets (new source): ", expected_targets_new)
 # NEW
 
 #total actual nominations (old json)
-flat_noms_new <- tidyr::unnest(new, nominatedtarget,names_sep=".")
+flat_noms_new <- tidyr::unnest(new, target_nominations,names_sep=".")
 new_noms <- nrow(flat_noms_new)
 cat("\ntotal actual nominations (new json): ", new_noms)
 
@@ -276,6 +298,369 @@ cat("\ntotal actual nominated targets (new json): ", new_targets)
 # total actual # genes (new json)
 new_genes <- length(unique(gene_info_new$ensembl_gene_id))
 cat("\ntotal actual # genes (new json): ", new_genes, "\ntotal and unique equal: ", length(gene_info_new$ensembl_gene_id) == length(unique(gene_info_new$ensembl_gene_id)))
+
+```
+
+```{r}
+flat_noms_new
+amp <- nrow(flat_noms_new[flat_noms_new$target_nominations.source == "AMP-AD",])
+treat <- nrow(flat_noms_new[flat_noms_new$target_nominations.source == "TREAT-AD",])
+cc <- nrow(flat_noms_new[flat_noms_new$target_nominations.source == "Community",])
+resil <- nrow(flat_noms_new[flat_noms_new$target_nominations.source == "Resilience-AD",])
+
+multiple_nom_targets <- flat_noms_new %>% group_by(ensembl_gene_id) %>% count()
+n_multiple_nom_targets <- multiple_nom_targets[multiple_nom_targets$n > 1,]
+
+
+cat("\nAMP-AD: ", amp)
+cat("\nTREAT-AD: ", treat)
+cat("\nCC: ", cc)
+cat("\nResilience-AD: ", resil)
+cat("\nMulti-nom: ", nrow(n_multiple_nom_targets))
+```
+
+```{r}
+unique(target_list_source_new$Source)
+unique(target_list_source_new$Team)
+```
+
+## Poster stats
+```{r}
+nominated_targets_new <- get_subobject(gene_info_new, "target_nominations")
+unique(nominated_targets_new$source)
+
+amp_nt <- nominated_targets_new[nominated_targets_new$source == 'AMP-AD',]
+treat_nt <- nominated_targets_new[nominated_targets_new$source == 'TREAT-AD',]
+com_nt <- nominated_targets_new[nominated_targets_new$source == 'Community',]
+res_nt <- nominated_targets_new[nominated_targets_new$source == 'Resilience-AD',]
+
+cat("num amp-ad noms: ", nrow(amp_nt))
+cat("num treat-ad noms: ", nrow(treat_nt))
+cat("num cc noms: ", nrow(com_nt))
+cat("num resilience-ad noms: ", nrow(res_nt))
+
+print(amp_nt)
+print(treat_nt)
+print(com_nt)
+print(res_nt)
+```
+
+***
+Misc investigations/validation
+***
+
+## GENE_INFO
+
+## AG-1333 -  unarchived ensembl releases - is ensembl_release value correct or also rolled back to last archived?
+```{r}
+# gereate a map of ensembl release to ensembl archive; uses NAs for unavailable archives
+releases <- c(54:111)
+archives <- c("may2009", rep(NA, 20), "feb2014", rep(NA, 1), "oct2014", rep(NA, 2), "may2015", rep(NA, 14), "jan2019",
+              "apr2019", "jul2019", "sept2019", "jan2020", "apr2020", "aug2020", "nov2020", "feb2021", "may2021", 
+              "dec2021", "apr2022", "jul2022", "oct2022", "feb2023", "jul2023", "jan2024")
+ensembl_map <- data.frame(ensembl_release = releases, ensembl_archive = archives)
+ensembl_map
+```
+
+```{r}
+# extract ensembl_infos
+infos <- do.call(rbind.data.frame, lapply(gene_info_new$ensembl_info, as.data.frame, stringsAsFactors = FALSE))
+keeps <- c("ensembl_release", "ensembl_permalink")
+infos <- subset(infos, select = keeps)
+infos
+```
+
+```{r}
+# filter out the rows that are in release 110
+historic_release_infos <- infos[!grepl("jul2023", infos$ensembl_permalink, fixed = TRUE),]
+historic_release_infos
+```
+How many ENSGs map to unarchived ensembl releases?
+```{r}
+unarchived <- ensembl_map[is.na(ensembl_map$ensembl_archive),]
+unarchived_releases <- unarchived$ensembl_release
+unarchived_releases
+
+impacted <- historic_release_infos[historic_release_infos$ensembl_release %in% unarchived_releases,]
+impacted
+```
+
+
+
+## Gene source ENSG release/replacement values
+Stats
+```{r}
+gene_source
+cat("\n***ensembl_release***")
+cat("\nunique values: ", sort(unique(gene_source$ensembl_release)))
+cat("\nnumber of targets with NA value: ", nrow(gene_source[is.na(gene_source$ensembl_release),]))
+cat("\nnumber of targets with blank value: ", nrow(gene_source[gene_source$ensembl_release == '',]))
+
+cat("\n***permalink***")
+cat("\nnumber of targets with NA value: ", nrow(gene_source[is.na(gene_source$permalink),]))
+cat("\nnumber of targets with blank value: ", nrow(gene_source[gene_source$permalink == '',]))
+
+cat("\n***possible_replacement***")
+flat_pr <- unnest(gene_source, possible_replacement)
+cat("\ntotal number of values: ", nrow(flat_pr))
+cat("\nunique values:", length(unique(flat_pr$possible_replacement)))
+cat("\nnumber of targets with replacement value(s): ", sum(lengths(gene_source$possible_replacement) > 0))
+cat("\nnumber of targets with NA value: ", nrow(gene_source[is.na(gene_source$possible_replacement),]))
+cat("\nnumber of targets with empty list value: ", sum(lengths(gene_source$possible_replacement) == 0), "/", nrow(gene_source))
+
+cat("\n***ensembl releases***")
+cat("\nnumber of targets with NA value: ", nrow(gene_source[is.na(gene_source$ensembl_release),]))
+cat("\nnumber of targets with blank value: ", nrow(gene_source[gene_source$ensembl_release =='',]))
+
+
+cat("\n***Replacements with gene details pages in Agora")
+unique_prs <- unique(flat_pr$possible_replacement)
+unique_ensgs <- gene_info_new$ensembl_gene_id
+# in PRs, not in ENSGs
+missing <- setdiff(unique_prs, unique_ensgs)
+cat("\nPRs missing in Agora: ", missing)
+```
+What gene(s) are the 'missing' PRs associated with?
+
+PRs missing in Agora:  
+* ENSG00000289022 
+  -> ENSG00000263464 (104, 6 other PRs: ENSG00000289549, ENSG00000288867, ENSG00000289022, ENSG00000289240, ENSG00000288733, ENSG00000289542)
+  -> ENSG00000256374 (104, 6 other PRs: ENSG00000288867, ENSG00000288733, ENSG00000289549, ENSG00000289022, ENSG00000289240, ENSG00000289542)
+* ENSG00000289240 - same as above
+* ENSG00000288733 - same as above
+* ENSG00000289542 - same as above
+
+The 2 PRs that aren't missing from Agora are:
+ENSG00000289549 - PPIAL4D
+ENSG00000288867 - PPIAL4C
+
+```{r}
+
+flat_pr[flat_pr$possible_replacement == "ENSG00000289022",]
+flat_pr[flat_pr$possible_replacement == "ENSG00000289240",]
+flat_pr[flat_pr$possible_replacement == "ENSG00000288733",]
+flat_pr[flat_pr$possible_replacement == "ENSG00000289542",]
+
+```
+
+Do we have gene details pages for all possible replacement values?
+```{r}
+
+```
+
+What info do we have for retired ENSGs?
+-> just about nothing
+```{r}
+retired <- gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000281027',]
+retired
+```
+
+
+
+Target distribution across releases
+```{r}
+latest <- '110'
+releases <- c("109", "106", "84",  "105", "91",  "104", "99",  "96",  "87",  "103", "93",  "80",  "95",  "102", "107", "98",  "100", "97",  "82",  "89", "101", "108", "81")
+
+cat("number of targets in latest release: ", nrow(gene_source[gene_source$ensembl_release =='110',]))
+
+release_distribution <- data.frame(ensembl_release = character(), n_targets = integer())
+ensgs_in_missing_releases <- data.frame(ensembl_release = character(), ensembl_gene_id = character())
+
+cat("\ntargets per release")
+for (release in releases) {
+  targets <- gene_source[gene_source$ensembl_release == release,]
+  #cat("\nRelease ", release, ": ", nrow(targets), " targets")
+  row <- data.frame(ensembl_release = release, n_targets = nrow(targets))
+  release_distribution <- bind_rows(release_distribution, row)
+  
+  
+  
+  if (release > 80 && release < 93) {
+    cat("\ntargets in missing release", release)
+    repl_targets <- gene_source[lengths(gene_source$possible_replacement) == 0,]
+    ensgs <- repl_targets$ensembl_gene_id
+
+    for (ensg in ensgs) {
+      cat("\ntarget ", ensg)
+      rep_rows <- flat_pr[flat_pr$ensembl_gene_id == ensg,]
+  
+    }
+  }
+}
+
+print(release_distribution)
+print(ensgs_in_missing_releases)
+```
+
+## SRM duplicate rows
+
+What ensembl release are the duplicate SRM rows from (AG-1296) ?
+IPTK1: ENSG00000100605, ENSG00000274958
+LDHA: ENSG00000134333, ENSG00000288299
+MAPT: ENSG00000186868, ENSG00000277956, ENSG00000276155
+NDUFA6: ENSG00000184983, ENSG00000272765, ENSG00000277365, ENSG00000281013, ENSG00000273397
+PTPRD: ENSG00000153707, ENSG00000282932
+PVALB: ENSG00000100362, ENSG00000274665
+RUVBL1: ENSG00000175792, ENSG00000284901
+
+```{r}
+# IPTK
+IPTK1 <- gene_info_new[gene_info_new$ensembl_gene_id == "ENSG00000282932",]
+IPTK2 <- gene_info_new[gene_info_new$ensembl_gene_id == "ENSG00000274958",]
+IPTK1_ensembl_info <- data.frame(IPTK1$ensembl_info)
+IPTK2_ensembl_info <- data.frame(IPTK2$ensembl_info)
+cat("\nIPTK ensembl_gene_id: ",  IPTK1$ensembl_gene_id, " ensembl release: ", IPTK1_ensembl_info$ensembl_release)
+cat("\nIPTK ensembl_gene_id: ",  IPTK2$ensembl_gene_id, " ensembl release: ", IPTK2_ensembl_info$ensembl_release)
+```
+
+
+
+
+## AG-1250 - igap HASG filtering + ensembl release 110
+
+
+```{r}
+# json files
+old_synId <-  "syn12548902.49" 
+new_synId <- "syn17015359.222" 
+
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+download_files(old_synId, new_synId, "gene_info_pinned")
+```
+
+```{r}
+old_ensgs <- gene_info_pinned_old$ensembl_gene_id
+new_ensgs <- gene_info_pinned_new$ensembl_gene_id
+removed_ensgs <- setdiff(old_ensgs, new_ensgs)
+added_ensgs <- setdiff(new_ensgs, old_ensgs)
+
+gene_info_added <- gene_info_pinned_old[gene_info_pinned_old$ensembl_gene_id %in% removed_ensgs,]
+gene_info_removed <- gene_info_pinned_new[gene_info_pinned_new$ensembl_gene_id %in% added_ensgs,]
+
+gene_info_added
+gene_info_removed
+```
+
+do SRM results intersect with the added/removed ENSGs? (AG-1245)
+```{r}
+srm_ensgs <- proteomics_srm_new$ensembl_gene_id
+
+removed_srm <- intersect(srm_ensgs, removed_ensgs)
+added_srm <- intersect(srm_ensgs, added_ensgs)
+
+removed_srm
+added_srm
+```
+
+
+AG-1245 SRM deduplication
+
+```{r}
+iptk <- c("ENSG00000100605", "ENSG00000274958")
+gene_info_new[gene_info_new$ensembl_gene_id %in% iptk,]
+
+ldha <- c("ENSG00000134333", "ENSG00000288299")
+gene_info_new[gene_info_new$ensembl_gene_id %in% ldha,]
+
+mapt <- c("ENSG00000186868", "ENSG00000277956", "ENSG00000276155")
+gene_info_new[gene_info_new$ensembl_gene_id %in% mapt,]
+
+ndufa6 <- c("ENSG00000184983", "ENSG00000272765", "ENSG00000277365", "ENSG00000281013", "ENSG00000273397")
+gene_info_new[gene_info_new$ensembl_gene_id %in% ndufa6,]
+
+ptrpd <- c("ENSG00000153707", "ENSG00000282932")
+gene_info_new[gene_info_new$ensembl_gene_id %in% ptrpd,]
+
+pvalb <- c("ENSG00000100362", "ENSG00000274665")
+gene_info_new[gene_info_new$ensembl_gene_id %in% pvalb,]
+
+ruvbl1 <- c("ENSG00000175792", "ENSG00000284901")
+gene_info_new[gene_info_new$ensembl_gene_id %in% ruvbl1,]
+```
+
+## TER missing ADI targets
+
+```{r}
+adis <- ter_source[ter_source$is_adi == TRUE,]
+adis
+
+adi_ensgs <- adis$ensembl_gene_id
+
+target_ensgs <- target_list_source$ensembl_gene_id
+
+setdiff(adi_ensgs, target_ensgs)
+```
+
+## new nominations '23 intial validation
+
+```{r}
+setdiff(gene_info_new$ensembl_gene_id, gene_info_old$ensembl_gene_id)
+gene_info_new[gene_info_new$ensembl_gene_id == " ENSG00000166949",]
+gene_info_new[gene_info_new$ensembl_gene_id == "ENSG00000166949",]
+
+```
+Are the new empty hgnc/name values due to a biomart refresh?
+-> 110 in both, so no change in ensembl release?
+```{r}
+new_plec <- gene_info_new[gene_info_new$ensembl_gene_id == "ENSG00000178209",]
+old_plec <- gene_info_old[gene_info_old$ensembl_gene_id == "ENSG00000178209",]
+
+new_plec$ensembl_info
+old_plec$ensembl_info
+```
+
+Why do we have +874 ensgs when we expected to have fewer due to igap filtering?
+all exist in ensembl release 110
+```{r}
+new <- gene_info_new$ensembl_gene_id
+old <- gene_info_old$ensembl_gene_id
+
+new_ensgs <- setdiff(new, old)
+removed_ensgs <- setdiff(old, new)
+
+# what got removed?
+for(ensg in removed_ensgs) {
+  row <- gene_info_old[gene_info_old$ensembl_gene_id == ensg,]
+  print(row$ensembl_gene_id)
+}
+
+# what got added?
+for(ensg in new_ensgs) {
+  row <- gene_info_new[gene_info_new$ensembl_gene_id == ensg,]
+  ensembl_info <- data.frame(row$ensembl_info[1])
+  print(row$ensembl_gene_id)
+  print(ensembl_info$ensembl_release)
+}
+```
+Spot check missing ENSGs
+- checked 4x, all are X vs Y chr. - i guess this is ok? is this something new in ensembl release 110??
+
+```{r}
+# ASMTL-AS1
+missing <- gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000292331',] # Y chr
+agora <- gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000236017',] # X chr
+
+missing$ensembl_info
+agora$ensembl_info
+
+# MIR6089
+missing <- gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000277120',] # X chr
+agora <- gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000292346',] # Y chr
+
+missing$ensembl_info
+agora$ensembl_info
+```
+
+```{r}
+nominated_targets_new <- get_subobject(gene_info_new, "target_nominations")
+mayo <- nominated_targets_new[grep("Mayo", nominated_targets_new$team),]
+unique(mayo$initial_nomination)
+```
+
+do we have a 6-nom target yet? -> NOPE!
+```{r}
+unique(gene_info_new$total_nominations)
 
 ```
 
@@ -317,116 +702,6 @@ ter_fields <- c("ensembl_gene_id", "is_tep", "is_adi")
 has_ter_trimmed <- has_ter[ter_fields]
 joined <- full_join(has_ter_trimmed, ter_source, by = "ensembl_gene_id")
 joined
-```
-
-## Gene source ENSG release/replacement values
-Stats
-```{r}
-gene_source
-cat("\n***ensembl_release***")
-cat("\nunique values: ", unique(gene_source$ensembl_release))
-cat("\nnumber of targets with NA value: ", nrow(gene_source[is.na(gene_source$ensembl_release),]))
-cat("\nnumber of targets with blank value: ", nrow(gene_source[gene_source$ensembl_release == '',]))
-
-cat("\n***permalink***")
-cat("\nnumber of targets with NA value: ", nrow(gene_source[is.na(gene_source$permalink),]))
-cat("\nnumber of targets with blank value: ", nrow(gene_source[gene_source$permalink == '',]))
-
-cat("\n***possible_replacement***")
-flat_pr <- unnest(gene_source, possible_replacement)
-cat("\ntotal number of values: ", nrow(flat_pr))
-cat("\nunique values:", length(unique(flat_pr$possible_replacement)))
-cat("\nnumber of targets with replacement value(s): ", sum(lengths(gene_source$possible_replacement) > 0))
-cat("\nnumber of targets with NA value: ", nrow(gene_source[is.na(gene_source$possible_replacement),]))
-cat("\nnumber of targets with empty list value: ", sum(lengths(gene_source$possible_replacement) == 0), "/", nrow(gene_source))
-
-cat("\n***ensembl releases***")
-cat("\nnumber of targets with NA value: ", nrow(gene_source[is.na(gene_source$ensembl_release),]))
-cat("\nnumber of targets with blank value: ", nrow(gene_source[gene_source$ensembl_release =='',]))
-
-
-cat("\n***Replacements with gene details pages in Agora")
-unique_prs <- unique(flat_pr$possible_replacement)
-unique_ensgs <- gene_info_new$ensembl_gene_id
-# in PRs, not in ENSGs
-missing <- setdiff(unique_prs, unique_ensgs)
-cat("\nPRs missing in Agora: ", missing)
-```
-What ensembl release are the duplicate SRM rows from (AG-1296) ?
-IPTK1: ENSG00000100605, ENSG00000274958
-LDHA: ENSG00000134333, ENSG00000288299
-MAPT: ENSG00000186868, ENSG00000277956, ENSG00000276155
-NDUFA6: ENSG00000184983, ENSG00000272765, ENSG00000277365, ENSG00000281013, ENSG00000273397
-PTPRD: ENSG00000153707, ENSG00000282932
-PVALB: ENSG00000100362, ENSG00000274665
-RUVBL1: ENSG00000175792, ENSG00000284901
-
-```{r}
-# IPTK
-IPTK1 <- gene_info_new[gene_info_new$ensembl_gene_id == "ENSG00000282932",]
-IPTK2 <- gene_info_new[gene_info_new$ensembl_gene_id == "ENSG00000274958",]
-IPTK1_ensembl_info <- data.frame(IPTK1$ensembl_info)
-IPTK2_ensembl_info <- data.frame(IPTK2$ensembl_info)
-cat("\nIPTK ensembl_gene_id: ",  IPTK1$ensembl_gene_id, " ensembl release: ", IPTK1_ensembl_info$ensembl_release)
-cat("\nIPTK ensembl_gene_id: ",  IPTK2$ensembl_gene_id, " ensembl release: ", IPTK2_ensembl_info$ensembl_release)
-```
-
-
-
-What gene(s) has a particular PR?
-
-```{r}
-
-flat_pr[flat_pr$possible_replacement == "ENSG00000289022",]
-
-```
-
-
-Target distribution across releases
-```{r}
-latest <- '110'
-releases <- c("109", "106", "84",  "105", "91",  "104", "99",  "96",  "87",  "103", "93",  "80",  "95",  "102", "107", "98",  "100", "97",  "82",  "89", "101", "108", "81")
-
-cat("number of targets in latest release: ", nrow(gene_source[gene_source$ensembl_release =='110',]))
-
-release_distribution <- data.frame(ensembl_release = character(), n_targets = integer())
-ensgs_in_missing_releases <- data.frame(ensembl_release = character(), ensembl_gene_id = character())
-
-cat("\ntargets per release")
-for (release in releases) {
-  targets <- gene_source[gene_source$ensembl_release == release,]
-  #cat("\nRelease ", release, ": ", nrow(targets), " targets")
-  row <- data.frame(ensembl_release = release, n_targets = nrow(targets))
-  release_distribution <- bind_rows(release_distribution, row)
-  
-  
-  
-  if (release > 80 && release < 93) {
-    cat("\ntargets in missing release", release)
-    repl_targets <- gene_source[lengths(gene_source$possible_replacement) == 0,]
-    ensgs <- repl_targets$ensembl_gene_id
-
-    for (ensg in ensgs) {
-      cat("\ntarget ", ensg)
-      rep_rows <- flat_pr[flat_pr$ensembl_gene_id == ensg,]
-  
-    }
-  }
-}
-
-print(release_distribution)
-print(ensgs_in_missing_releases)
-```
-
-Do we have gene details pages for all possible replacement values?
-```{r}
-
-```
-
-What info do we have for retired ENSGs?
-```{r}
-retired <- gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000281027',]
-retired
 ```
 
 
@@ -511,22 +786,6 @@ length(setdiff(source_has_eqtl_ensgs, gene_info_has_eqtl_ensgs))
 print("has_eqtl ENSGs in generated but not in source")
 length(setdiff(gene_info_has_eqtl_ensgs, source_has_eqtl_ensgs))
 
-```
-
-
-## Poster stats
-```{r}
-nominated_targets_new <- get_subobject(gene_info_new, "nominatedtarget")
-
-amp_nt <- nominated_targets_new[nominated_targets_new$source == 'AMP-AD',]
-treat_nt <- nominated_targets_new[nominated_targets_new$source == 'TREAT-AD',]
-com_nt <- nominated_targets_new[nominated_targets_new$source == 'Community',]
-res_nt <- nominated_targets_new[nominated_targets_new$source == 'Resilience-AD',]
-
-length(unique(amp_nt$ensembl_gene_id))
-length(unique(treat_nt$ensembl_gene_id))
-length(unique(com_nt$ensembl_gene_id))
-length(unique(res_nt$ensembl_gene_id))
 ```
 
 
@@ -1278,4 +1537,27 @@ new
 old
 
 setdiff(new, old)
+```
+
+New nomination ENSG disambiguation (ASU multiple ENSG rows)
+DCHS2
+```{r}
+row <- gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000197410',]
+row
+row$ensembl_info
+
+row2 <- gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000284227',]
+row2
+row2$ensembl_info
+```
+
+TRPM1
+```{r}
+row <- gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000134160',]
+row
+row$ensembl_info
+
+row2 <- gene_info_new[gene_info_new$ensembl_gene_id == 'ENSG00000274965',]
+row2
+row2$ensembl_info
 ```

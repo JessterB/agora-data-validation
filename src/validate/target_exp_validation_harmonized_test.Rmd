@@ -56,10 +56,14 @@ test(get(new_name), get(rules))
 ***
 # Outstanding validation failures
 ***
-
-* field_length(ensembl_gene_id, n = 15): 1 fail - See AG-351 (TL;DR - ignore this failure)
-* is.na(ensembl_gene_id) and  field_length(ensembl_gene_id, n=15): 1 fail/1 NA respectively (see AG-905)
-* field_format(reference_doi, "^$|^https?://doi.org/.*$", type = "regex"): 103 fails [changed from "" to null via AG-474]
+* field_length(contributors, min = 2, max = 1000): 
+16 fails
+* is.na(ensembl_gene_id) and  field_length(ensembl_gene_id, n=15): 
+1 fail/NA respectively (see AG-905)
+* field_format(reference_doi, "^$|^https?://doi.org/.*$", type = "regex"): 
+118 fails
+* tolower(published) != "yes" | (!is.na(reference)): 
+8  (new in ATDv437) - we have doi but not ref, should be fine
 
 ***
 # Validation failure investigations
@@ -69,7 +73,7 @@ test(get(new_name), get(rules))
 ## field_format(reference_doi, "^$|^https?://doi.org/.*$", type = "regex")
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule
-v <- validator(field_format(reference_doi, "^$|^https?://doi.org/.*$", type = "regex"))
+v <- validator(tolower(published) != "yes" | (!is.na(reference)))
 cf <- confront(target_exp_validation_harmonized_new, v)
 out <- values(cf)
 is_unique_fails <- target_exp_validation_harmonized_new[!out,]

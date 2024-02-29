@@ -300,3 +300,9 @@ How many genes/proteins do we cover?
 length(unique(proteomics_new$ensembl_gene_id))
 length(unique(proteomics_new$uniprotid))
 ```
+
+## APP
+
+```{r}
+proteomics_new[proteomics_new$hgnc_symbol == 'APP',]
+```

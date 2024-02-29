@@ -24,6 +24,6 @@ rules_overall_scores <- validator(
   # overall
   is.numeric(target_risk_score),
   !is.na(target_risk_score),
-  in_range(target_risk_score, min=0, max=9)
+  in_range(target_risk_score, min=0, max=5)
   
 )

@@ -1,0 +1,174 @@
+---
+title: "misc investigations etc."
+---
+*****
+Setup
+*****
+```{r eval=FALSE, echo=FALSE}
+source("~/repos/rstudio/agora-data-validation/src/utils.R")
+prepare()
+```
+
+
+*****
+MSSM/ZHANG
+*****
+additional notes on https://sagebionetworks.jira.com/browse/AG-1252
+
+prior to loading csv into this workbook:
+1. populate internal-only columns (Source, input_data, initial_nomination_)
+2. adjust user-supplied values as required (study, Team)
+3. export each sheet as csv
+4. remove 'empty' rows from csvs as required (new only for this one)
+
+In this workbook:
+1. remove genes in 'updates' from 'new' 
+2. merge Predicted_Theraputic_Direction_* columns -> Predicted_Theraputic_Direction
+3. populate 'internal' columns (source, intital_nomination)
+4. export modified csv that can be cleanly merged with targets source file
+
+```{r}
+zhang_new <- read_csv("/Users/jbritton/Desktop/New nominations/from drive/Zhang/Zhang_new_noms.csv")
+
+zhang_updates <- read_csv("/Users/jbritton/Desktop/New nominations/from drive/Zhang/Zhang_updated_noms.csv")
+
+zhang_new
+zhang_updates
+```
+Sanity check uniques
+new - no dups
+updates - 3 dups?? -> TODO why????!?!?!?!?!
+```{r}
+# are there dups?
+length(unique(zhang_new$ensembl_gene_id))
+nrow(zhang_new)
+
+length(unique(zhang_updates$ensembl_gene_id))
+nrow(zhang_updates)
+
+# what are the dups?
+n_occur <- data.frame(table(zhang_updates$ensembl_gene_id))
+dup_updates <- zhang_updates[zhang_updates$ensembl_gene_id %in% n_occur$Var1[n_occur$Freq > 1],]
+
+# are the dup rows identical? -> Nope
+highlander <- function(x) {
+  x |> 
+    unique() |> 
+    length() |> 
+    {\(x) x == 1}()
+}
+
+dup_updates |> 
+  group_by(ensembl_gene_id) |> 
+  summarise(
+    across(everything(), highlander)
+  )
+
+# look at the dups
+zhang_updates[zhang_updates$ensembl_gene_id == "ENSG00000118733",]
+zhang_updates[zhang_updates$ensembl_gene_id == "ENSG00000124785",]
+zhang_updates[zhang_updates$ensembl_gene_id == "ENSG00000147065",]
+```
+
+remove targets on the updates list from the new list, because they are not in fact new
+```{r}
+keep <- zhang_new[!(zhang_new$ensembl_gene_id %in% zhang_updates$ensembl_gene_id),]
+
+dropped <- zhang_new[zhang_new$ensembl_gene_id %in% zhang_updates$ensembl_gene_id,]
+cat(dropped$hgnc_symbol)
+cat("\nnew: ", nrow(zhang_new), "\nupdates: ", nrow(zhang_updates), "\ndropped: ", nrow(dropped), "\nkeeps: ", nrow(keep))
+keep
+dropped
+```
+
+
+Merge Predicted_Therapeutic_Direction_* fields in 'keep'
+```{r}
+merged_ptd <- paste(keep$`Predicted_Therapeutic_Direction category`, keep$`Predicted_Therapeutic_Direction details`)
+merged_ptd_keeps <- keep$`Predicted_Therapeutic_Direction category` <- merged_ptd
+drop_cols <- c("Predicted_Therapeutic_Direction details")
+merged_ptd_keeps <- keep[, !(names(keep) %in% drop_cols)]
+names(merged_ptd_keeps)[names(merged_ptd_keeps) == "Predicted_Therapeutic_Direction category"] <- "Predicted_Therapeutic_Direction"
+merged_ptd_keeps
+```
+
+Write new nominations csv file
+```{r}
+write.csv(merged_ptd_keeps, "/Users/jbritton/Desktop/New nominations/from drive/Zhang/Zhang_new_noms_deduped.csv", row.names=FALSE)
+
+```
+
+
+*****
+Emory
+*****
+additional notes on https://sagebionetworks.jira.com/browse/AG-1254
+
+prior to loading csv into this workbook:
+1. populate internal-only columns (Source, input_data, initial_nomination)
+2. adjust user-supplied values as required (Study, Team)
+3. export each sheet as csv
+4. remove 'empty' rows from csvs as required
+
+In this workbook:
+1. merge Predicted_Theraputic_Direction_* columns -> Predicted_Theraputic_Direction
+2. export modified csv that can be cleanly merged with targets source file
+
+```{r}
+emory_new <- read_csv("/Users/jbritton/Desktop/New nominations/from drive/Emory/12.6.23_Emory Agora Target Submission filled+11Nov23_updates.csv")
+
+emory_updates <- read_csv("/Users/jbritton/Desktop/New nominations/from drive/Emory/Emory Agora target submissions_for_empty_updates.xlsm - Nominated Target Updates.csv")
+
+emory_new
+emory_updates
+```
+
+Sanity check uniques
+new - 
+updates - 
+```{r}
+# are there dups?
+length(unique(emory_new$ensembl_gene_id))
+nrow(emory_new)
+
+length(unique(emory_updates$ensembl_gene_id))
+nrow(emory_updates)
+
+# what are the dups?
+n_occur <- data.frame(table(emory_updates$ensembl_gene_id))
+dup_updates <- emory_updates[emory_updates$ensembl_gene_id %in% n_occur$Var1[n_occur$Freq > 1],]
+
+# are the dup rows identical? -> Nope
+highlander <- function(x) {
+  x |> 
+    unique() |> 
+    length() |> 
+    {\(x) x == 1}()
+}
+
+dup_updates |> 
+  group_by(ensembl_gene_id) |> 
+  summarise(
+    across(everything(), highlander)
+  )
+
+
+
+```
+
+
+
+Merge Predicted_Therapeutic_Direction_* fields
+```{r}
+merged_ptd <- paste(emory_new$`Predicted_Therapeutic_Direction category`, emory_new$`Predicted_Therapeutic_Direction details`)
+merged_ptd_keeps <- emory_new$`Predicted_Therapeutic_Direction category` <- merged_ptd
+drop_cols <- c("Predicted_Therapeutic_Direction details")
+merged_ptd_keeps <- emory_new[, !(names(emory_new) %in% drop_cols)]
+names(merged_ptd_keeps)[names(merged_ptd_keeps) == "Predicted_Therapeutic_Direction category"] <- "Predicted_Therapeutic_Direction"
+merged_ptd_keeps
+```
+
+Write new nominations csv file
+```{r}
+write.csv(merged_ptd_keeps, "/Users/jbritton/Desktop/New nominations/from drive/Emory/Emory_ptd_merged.csv", row.names=FALSE)
+```

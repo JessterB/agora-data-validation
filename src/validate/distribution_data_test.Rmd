@@ -37,6 +37,7 @@ cat( name, ".json", "\n", date(),
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 download_files(old_synId, new_synId, name)
 ```
+
 ```{r}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 source <- download_file(source_synId, type = "table")

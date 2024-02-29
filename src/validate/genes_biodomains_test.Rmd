@@ -72,9 +72,9 @@ test(get("go_terms_to_test"), get('rules_gene_biodomain_go_terms'))
 ```{r}
 # yields a dataframe containing the failure cases for a specific rule
 v <- validator(length(go_terms) == n_gene_biodomain_terms)
-cf <- confront(DATAFRAME, v)
+cf <- confront(genes_biodomains_new, v)
 out <- values(cf)
-is_unique_fails <- DATAFRAME[!out,]
+is_unique_fails <- genes_biodomains_new[!out,]
 is_unique_fails
 ```
 
@@ -89,9 +89,73 @@ is_unique_fails <- genes_biodomains_new[!out,]
 is_unique_fails
 ```
 
+# lengths(go_terms) == n_gene_biodomain_terms - 12 fails (ATD v35)
+```{r}
+# yields a dataframe containing the failure cases for a specific rule
+v <- validator(lengths(go_terms) == n_gene_biodomain_terms)
+cf <- confront(genes_biodomains_new, v)
+out <- values(cf)
+is_unique_fails <- genes_biodomains_new[!out,]
+is_unique_fails
+```
+```{r}
+gb <- genes_biodomains_new$gene_biodomains
+results <- c()
+
+for (g in gb) {
+  r <- as.data.frame(g)
+  print(r)
+  x <- lengths(r$go_terms)
+  print(x)
+  y <- r$n_gene_biodomain_terms
+  results <- x == y
+}
+
+results
+```
+
+
+```{r}
+r <- as.data.frame(gb[1])
+x <- lengths(gb1$go_terms)
+y <- gb1$n_gene_biodomain_terms
+
+x == y
+```
+
+
 ***
 # Other investigations
 ***
+max # go terms in genes_biodomains?
+```{r}
+gene_biodomains <- unnest(genes_biodomains_new, cols=c(gene_biodomains))
+gos <- gene_biodomains$go_terms
+
+vals <- c(0)
+
+for(i in 1:length(gos)) {
+  n_gos <- length(gos[[i]])
+  append(vals, n_gos)
+  if (n_gos > 40) {
+      cat("\n", n_gos)
+  }
+
+}
+```
+
+
+max # go terms per biodomain?
+```{r}
+biodomains <- unique(genes_biodomains_source$Biodomain)
+
+for(biodomain in biodomains) {
+  terms <- genes_biodomains_source[genes_biodomains_source$Biodomain == biodomain,]
+  cat("\n", length(unique(terms$GOterm_Name)))
+}
+
+```
+
 # 3.3.0 ALDmv61 validation
 ```{r}
 genes_biodomains_new[1,]$gene_biodomains
@@ -250,4 +314,103 @@ which.max(nchar(terms))
 terms[which.max(nchar(terms))]
 ```
 
+## AG-1245 dup ENSGs introduced via biodomains v1
 
+```{r}
+v1_source <- download_file("syn44151254.1", type = "csv") # file type: csv, tsv, json, f (feather)
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+```
+
+
+```{r}
+v3_source <- download_file("syn44151254.3", type = "csv") # file type: csv, tsv, json, f (feather)
+assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
+```
+
+```{r}
+iptk <- c("ENSG00000100605", "ENSG00000274958")
+iptk_rows <- v3_source[v3_source$ensembl_id %in% iptk,]
+cat("\niptk: ", unique(iptk_rows$ensembl_id))
+
+ldha <- c("ENSG00000134333", "ENSG00000288299")
+ldha_rows <- v3_source[v3_source$ensembl_id %in% ldha,]
+cat("\nldha: ", unique(ldha_rows$ensembl_id))
+
+mapt <- c("ENSG00000186868", "ENSG00000277956", "ENSG00000276155")
+mapt_rows <- v3_source[v3_source$ensembl_id %in% mapt,]
+cat("\nmapt: ", unique(mapt_rows$ensembl_id))
+
+ndufa6 <- c("ENSG00000184983", "ENSG00000272765", "ENSG00000277365", "ENSG00000281013", "ENSG00000273397")
+ndufa6_rows <- v3_source[v3_source$ensembl_id %in% ndufa6,]
+cat("\nndufa6: ", unique(ndufa6_rows$ensembl_id))
+
+ptrpd <- c("ENSG00000153707", "ENSG00000282932")
+ptrpd_rows <- v3_source[v3_source$ensembl_id %in% ptrpd,]
+cat("\nptrpd: ", unique(ptrpd_rows$ensembl_id))
+
+pvalb <- c("ENSG00000100362", "ENSG00000274665")
+pvalb_rows <- v3_source[v3_source$ensembl_id %in% pvalb,]
+cat("\npvalb: ", unique(pvalb_rows$ensembl_id))
+
+ruvbl1 <- c("ENSG00000175792", "ENSG00000284901")
+ruvbl1_rows <- v3_source[v3_source$ensembl_id %in% ruvbl1,]
+cat("\nruvbl1: ", unique(ruvbl1_rows$ensembl_id))
+```
+```{r}
+iptk <- c("ENSG00000100605", "ENSG00000274958")
+iptk_rows <- v1_source[v1_source$ensembl_id %in% iptk,]
+cat("\niptk: ", unique(iptk_rows$ensembl_id))
+
+ldha <- c("ENSG00000134333", "ENSG00000288299")
+ldha_rows <- v1_source[v1_source$ensembl_id %in% ldha,]
+cat("\nldha: ", unique(ldha_rows$ensembl_id))
+
+mapt <- c("ENSG00000186868", "ENSG00000277956", "ENSG00000276155")
+mapt_rows <- v1_source[v1_source$ensembl_id %in% mapt,]
+cat("\nmapt: ", unique(mapt_rows$ensembl_id))
+
+ndufa6 <- c("ENSG00000184983", "ENSG00000272765", "ENSG00000277365", "ENSG00000281013", "ENSG00000273397")
+ndufa6_rows <- v1_source[v1_source$ensembl_id %in% ndufa6,]
+cat("\nndufa6: ", unique(ndufa6_rows$ensembl_id))
+
+ptrpd <- c("ENSG00000153707", "ENSG00000282932")
+ptrpd_rows <- v1_source[v1_source$ensembl_id %in% ptrpd,]
+cat("\nptrpd: ", unique(ptrpd_rows$ensembl_id))
+
+pvalb <- c("ENSG00000100362", "ENSG00000274665")
+pvalb_rows <- v1_source[v1_source$ensembl_id %in% pvalb,]
+cat("\npvalb: ", unique(pvalb_rows$ensembl_id))
+
+ruvbl1 <- c("ENSG00000175792", "ENSG00000284901")
+ruvbl1_rows <- v1_source[v1_source$ensembl_id %in% ruvbl1,]
+cat("\nruvbl1: ", unique(ruvbl1_rows$ensembl_id))
+```
+
+
+```{r}
+ensembl_ids <- v1_source$ensembl_id
+v1_list <- grepl(";", ensembl_ids, fixed = TRUE)
+v1_concats <- v1_source[v1_list,]
+```
+
+```{r}
+ensembl_ids <- v3_source$ensembl_id
+v3_list <- grepl(";", ensembl_ids, fixed = TRUE)
+v3_concats <- v3_source[v3_list,]
+v3_concats
+nrow(v3_concats)
+
+hgncs_with_v3_dups <- c("IPTK", "LDHA", "MAPT", "NDUFA6", "PTRPD", "PVALB", "RUVBL1")
+v3_concats[v3_concats$symbol %in% hgncs_with_v3_dups,]
+```
+
+## AG-1306 ENSGs with null ensembl_infos introduced via biodomains source
+
+Are these in the v3 biodomains source? -> NO
+```{r}
+missing_ensembl_infos <- c("ENSG00000288359", "ENSG00000288307", "ENSG00000284063", "ENSG00000283975", "ENSG00000283951", "ENSG00000283264", "ENSG00000283158")
+v1_source[v1_source$ensembl_id %in% missing_ensembl_infos,]
+v3_source[v3_source$ensembl_id %in% missing_ensembl_infos,]
+
+v3_concats[is.na(v3_concats$hgnc_symbol),]
+```

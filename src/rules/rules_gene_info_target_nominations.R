@@ -43,7 +43,7 @@ rules_gene_info_target_nominations <-  validator(
   # study
   is.character(study),
   !is.na(study),
-  field_length(study, min=2, max=200),
+  field_length(study, min=2, max=500),
   
   # target_choice_justification
   is.character(target_choice_justification),

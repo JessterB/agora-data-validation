@@ -82,6 +82,22 @@ nas_source <- is.na(neuropath_corr_source$GName)
 neuropath_corr_source[nas_source,]
 ```
 
+***
+# Misc investigations
+***
 
+## highest correlations?
 
+```{r}
+types <- unique(neuropath_corr_new$neuropath_type)
 
+for (type in types) {
+  rows <- neuropath_corr_new[neuropath_corr_new$neuropath_type == type,]
+  max_row <- rows[which.max(rows$oddsratio),]
+  cat("\nType: ", type, "Max: ", max_row$oddsratio, "ENSG: ", max_row$ensg)
+}
+```
+
+```{r}
+
+```

@@ -3,7 +3,7 @@ rules_proteomics_distribution_data <- validator(
   # type
   is.character(type),
   field_length(type, min=3, max=3), 
-  type%in% c('LFQ', 'TMT'),
+  type%in% c('LFQ', 'TMT', 'SRM'),
   
   # tissue
   is.character(tissue),

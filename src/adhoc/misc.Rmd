@@ -1,11 +1,24 @@
 ---
-title: "misc investigations"
-output: html_notebook
+title: "misc investigations etc."
 ---
-
+*****
+Setup
 ```{r eval=FALSE, echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 prepare()
+```
+*****
+
+## cross file proteomics
+
+```{r}
+proteomics_new[proteomics_new$ensembl_gene_id == "ENSG00000178209",]
+proteomics_tmt_new[proteomics_tmt_new$ensembl_gene_id == "ENSG00000178209",]
+
+lfq <- proteomics_new$hgnc_symbol
+tmt <- proteomics_tmt_new$hgnc_symbol
+
+setdiff(lfq, tmt)
 ```
 
 ## MSBB metadata (adportal thread)

@@ -70,3 +70,12 @@ out <- values(cf)
 is_unique_fails <- biodomain_info_new[!out,]
 is_unique_fails
 ```
+
+
+***
+# other
+***
+
+```{r}
+biodomain_info_new
+```

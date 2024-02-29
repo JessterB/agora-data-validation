@@ -11,6 +11,8 @@ rules_proteomics_tmt <- validator(
   
   # uniprotid
   is.character(uniprotid), 
+  is_unique(uniprotid),
+  !is.na(uniprotid),
   field_format(uniprotid, "[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}", type="regex"),  # regex from https://www.uniprot.org/help/accession_numbers
   
   # log2_fc

@@ -41,6 +41,9 @@ assign(paste(name, "source", sep="_"), source, envir = .GlobalEnv)
 ```{r echo=FALSE}
 source("~/repos/rstudio/agora-data-validation/src/utils.R")
 compare(get(old_name), get(new_name), name)
+
+cat("\n***team_members***\n")
+compare_subobjects(get(old_name), get(new_name), "team", "members")
 ```
 
 
