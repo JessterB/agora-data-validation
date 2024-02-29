@@ -1,5 +1,5 @@
 ---
-title: "REPLACEME.json"
+title: "manifest validation"
 ---
 
 ```{r eval=FALSE, echo=FALSE}
