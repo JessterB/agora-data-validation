@@ -1,5 +1,5 @@
 ---
-title: "manifest validation"
+title: "manifest-driven file comparisons"
 ---
 
 ```{r eval=FALSE, echo=FALSE}
