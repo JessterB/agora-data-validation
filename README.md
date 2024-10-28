@@ -1,3 +1,9 @@
+# DEPRECATED
+
+The agora-data-validation project has been deprecated and is no longer supported.
+
+Agora's data is now validated via CI Great Expectations validation suites, which are defined in the [Agora repo](https://github.com/Sage-Bionetworks/Agora).
+
 # agora-data-validation
 The agora-data-validation project provides a framework for validating the integrity and consistency of Agora's data files across versions.
 
